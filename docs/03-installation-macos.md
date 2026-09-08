@@ -54,7 +54,7 @@ Login сохраняется в `~/.claude/` под вашим user.
 
 ```bash
 cd ~/.claude-lab/myagent/.claude
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin
 bun install
 bun run typecheck    # должно пройти без ошибок

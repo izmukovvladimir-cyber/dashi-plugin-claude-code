@@ -71,7 +71,7 @@ Login сохраняется в `~/.claude/` под этим пользоват�
 
 ```bash
 cd /home/agentctl/.claude-lab/myagent/.claude
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin
 bun install
 bun run typecheck    # должно пройти без ошибок
@@ -104,7 +104,7 @@ bun test             # 425 pass
 - В случае ошибки — извещаю владельца, не маскирую
 ```
 
-Полный пример с разделённой памятью (`@-include`) — изучите по аналогии существующих агентов в [github.com/qwwiwi/public-gbrain-agentos/tree/main/agent-template](https://github.com/qwwiwi/public-gbrain-agentos/tree/main/agent-template).
+Полный пример с разделённой памятью (`@-include`) — изучите по аналогии существующих агентов в [github.com/izmukovvladimir-cyber/public-gbrain-agentos/tree/main/agent-template](https://github.com/izmukovvladimir-cyber/public-gbrain-agentos/tree/main/agent-template).
 
 ---
 
@@ -292,7 +292,7 @@ sudo -u agentctl bash /home/agentctl/.claude-lab/myagent/.claude/dashi-plugin-cl
 
 Для long-term memory pipeline (запись turn'ов в `<workspace>/core/hot/recent.md` + `verbose-YYYY-MM-DD.jsonl`) — раздел [`plugin/README.md` → Memory hooks](../plugin/README.md#memory-hooks-phase-8-config).
 
-Альтернатива: используйте gbrain ([qwwiwi/public-gbrain-agentos](https://github.com/qwwiwi/public-gbrain-agentos)) — там MCP-серверы для memory/recall/swarm.
+Альтернатива: используйте gbrain ([izmukovvladimir-cyber/public-gbrain-agentos](https://github.com/izmukovvladimir-cyber/public-gbrain-agentos)) — там MCP-серверы для memory/recall/swarm.
 
 ---
 
