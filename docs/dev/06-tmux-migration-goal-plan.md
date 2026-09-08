@@ -17,7 +17,7 @@
 | Repo | Что берем | Что не берем |
 |------|-----------|--------------|
 | `nielsgroen/claude-tmux` | идеи для dashboard, session list, status detection, live preview, attach/switch UX | не является gateway или supervisor |
-| `obra/claude-session-driver` | worker launch pattern, tmux send safety, status scripts, hook events, approval flow, session registry | `--dangerously-skip-permissions` как default |
+| `izmukovvladimir-cyber/claude-session-driver` | worker launch pattern, tmux send safety, status scripts, hook events, approval flow, session registry | `--dangerously-skip-permissions` как default |
 | `codeninja/oauth-cli-coder` | persistent OAuth CLI sessions, clean PTY wrapper ideas, provider-agnostic registry, session reuse | "stealth" framing and screen-scraping as core architecture |
 | `hanxiao/claudecode-telegram` | Telegram -> tmux canary, pending flag, Stop hook transcript extraction, `/stop`, `/clear`, `/resume`, typing loop | global state files, no allowlist, no multi-agent routing, no Channel protocol |
 
