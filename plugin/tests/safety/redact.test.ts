@@ -170,13 +170,13 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
   // exempt from the GENERIC rule only — every specific rule still fires.
 
   test('GitHub PR link with a long repo slug survives intact', () => {
-    const url = 'https://github.com/qwwiwi/dashi-plugin-claude-code/pull/49'
+    const url = 'https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/pull/49'
     expect(redactSecrets(`PR готов: ${url}`)).toBe(`PR готов: ${url}`)
   })
 
   test('commit-SHA URL survives intact', () => {
     const url =
-      'https://github.com/qwwiwi/dashi-plugin-claude-code/commit/' +
+      'https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/commit/' +
       'a'.repeat(40)
     expect(redactSecrets(url)).toBe(url)
   })
@@ -185,11 +185,11 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
     // 2026-06-09: hyphenated identifiers are public, not secrets. The generic
     // rule no longer masks them anywhere (plain text or URL).
     const out = redactSecrets(
-      'slug dashi-plugin-claude-code and https://github.com/qwwiwi/dashi-plugin-claude-code',
+      'slug dashi-plugin-claude-code and https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code',
     )
     expect(out).toContain('slug dashi-plugin-claude-code and')
     expect(out).toContain(
-      'https://github.com/qwwiwi/dashi-plugin-claude-code',
+      'https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code',
     )
   })
 
@@ -216,7 +216,7 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
 
   test('GitHub PAT inside a URL is STILL redacted', () => {
     const out = redactSecrets(
-      `https://ghp_${'Z'.repeat(36)}@github.com/qwwiwi/repo.git`,
+      `https://ghp_${'Z'.repeat(36)}@github.com/izmukovvladimir-cyber/repo.git`,
     )
     expect(out).not.toContain('Z'.repeat(36))
   })
@@ -229,7 +229,7 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
 
   test('URL exemption is idempotent', () => {
     const input =
-      'see https://github.com/qwwiwi/dashi-plugin-claude-code/pull/49 and token abcd1234567890efghij5678WXYZ'
+      'see https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/pull/49 and token abcd1234567890efghij5678WXYZ'
     const once = redactSecrets(input)
     const twice = redactSecrets(once)
     expect(twice).toBe(once)
@@ -295,7 +295,7 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
     // URL ends with "." — the next long token after whitespace is NOT
     // part of the link and must still be masked.
     const out = redactSecrets(
-      'https://github.com/qwwiwi/dashi-plugin-claude-code/pull/49. Token abcd1234567890efghij5678WXYZ',
+      'https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/pull/49. Token abcd1234567890efghij5678WXYZ',
     )
     expect(out).toContain('dashi-plugin-claude-code/pull/49.')
     expect(out).toContain('abcd***WXYZ')
@@ -307,7 +307,7 @@ describe('redactSecrets — URL exemption for the generic long-token rule', () =
       'https://deploy:hunter2secret@host.example.com/x',
       `https://app.example.com/cb#access_token=${jwt}`,
       'https://discord.com/api/webhooks/42/tok_enva_lue123456789',
-      'https://github.com/qwwiwi/dashi-plugin-claude-code/pull/49,SECRET_0123456789012345678901234567',
+      'https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/pull/49,SECRET_0123456789012345678901234567',
     ].join(' ')
     const once = redactSecrets(input)
     const twice = redactSecrets(once)

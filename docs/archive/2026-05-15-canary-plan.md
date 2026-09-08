@@ -121,7 +121,7 @@ The 2026-06-10 production-class deadline favors proving the billing-safe channel
 
 Create the fork under:
 
-`/Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code/plugin/`
+`/Users/<user>/channel-telegram-claude-code/plugin/`
 
 | File | Purpose |
 |---|---|
@@ -302,7 +302,7 @@ Optional `config.json` keys, all Zod validated:
 ```json
 {
   "agent_id": "dashi-canary",
-  "workspace_root": "/Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code",
+  "workspace_root": "/Users/<user>/channel-telegram-claude-code",
   "expected_bot_id": 8507713167,
   "allowed_user_ids": [123456789],
   "allowed_chat_ids": [123456789],
@@ -967,7 +967,7 @@ export async function deliverChannelEvent(event: ChannelEvent, deps: ChannelDeps
 Install and typecheck:
 
 ```sh
-cd /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code/plugin
+cd /Users/<user>/channel-telegram-claude-code/plugin
 bun install
 bun run typecheck
 ```
@@ -975,7 +975,7 @@ bun run typecheck
 Run tests:
 
 ```sh
-cd /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code/plugin
+cd /Users/<user>/channel-telegram-claude-code/plugin
 bun test
 ```
 
@@ -1000,7 +1000,7 @@ Start Claude Code channel in tmux with the test bot only:
 ```sh
 tmux new-session -d -s dashi-channel-canary
 tmux send-keys -t dashi-channel-canary \
-  'cd /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code/plugin && TELEGRAM_STATE_DIR=$HOME/.claude/channels/dashi-telegram-canary TELEGRAM_EXPECTED_BOT_ID=8507713167 DASHI_WORKSPACE_ROOT=/Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code claude --dangerously-load-development-channels server:dashi-channel' C-m
+  'cd /Users/<user>/channel-telegram-claude-code/plugin && TELEGRAM_STATE_DIR=$HOME/.claude/channels/dashi-telegram-canary TELEGRAM_EXPECTED_BOT_ID=8507713167 DASHI_WORKSPACE_ROOT=/Users/<user>/channel-telegram-claude-code claude --dangerously-load-development-channels server:dashi-channel' C-m
 ```
 
 Smoke against @testmyfirsttmuxbot:
@@ -1030,7 +1030,7 @@ The existing Python canary bot and production gateway remain untouched. If the t
 
 - Do not touch production bot tokens for Silvana, Kaelthas, Garrosh, Arthas, or Claude.
 - Do not unload, edit, or restart the production `ai.orgrimmar.gateway` launchd job.
-- Do not edit `/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`.
+- Do not edit `/Users/<user>/.claude-lab/shared/gateway/gateway.py`.
 - Do not point the new plugin at any production bot token.
 - Do not run old and new consumers on the same token.
 - Do not add `--dangerously-skip-permissions` or `--permission-mode bypassPermissions` as a default.

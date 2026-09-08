@@ -204,7 +204,7 @@ describe('buildSanitizedTmuxEnv', () => {
     const parent = {
       PATH: '/usr/bin',
       GITHUB_TOKEN: 'ghp_x',
-      GITHUB_REPOSITORY: 'qwwiwi/repo', // prefix sweep (acceptable risk)
+      GITHUB_REPOSITORY: 'izmukovvladimir-cyber/repo', // prefix sweep (acceptable risk)
     }
     const { childEnv, forbiddenSeen } = buildSanitizedTmuxEnv(parent)
     expect(childEnv.GITHUB_TOKEN).toBeUndefined()

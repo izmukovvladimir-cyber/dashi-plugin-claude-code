@@ -278,7 +278,7 @@ describe('buildActivityDetail', () => {
 
 describe('secret-path leak after summarization (regression)', () => {
   test('Read of /Users/.../secrets/foo.key never reaches render unmasked', () => {
-    const absPath = '/Users/jasonqwwen/.claude-lab/silvana/secrets/openviking.key'
+    const absPath = '/Users/<user>/.claude-lab/silvana/secrets/openviking.key'
     const detail = buildActivityDetail('Read', { file_path: absPath })
     // Buffer-level: filename must be masked at store time.
     expect(detail).not.toContain('openviking.key')

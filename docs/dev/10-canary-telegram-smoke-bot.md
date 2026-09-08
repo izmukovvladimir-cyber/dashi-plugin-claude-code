@@ -30,7 +30,7 @@ Still not complete:
 The canary runner is launched in tmux with the token read only from the secret file:
 
 ```bash
-tmux new-session -d -s orgrimmar-canary -c /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'
+tmux new-session -d -s orgrimmar-canary -c /Users/<user>/channel-telegram-claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'
 ```
 
 The command line does not contain the token value.
@@ -59,7 +59,7 @@ The safe host-level replacement sequence used for the canary was:
 
 ```bash
 tmux kill-session -t orgrimmar-canary
-tmux new-session -d -s orgrimmar-canary -c /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'
+tmux new-session -d -s orgrimmar-canary -c /Users/<user>/channel-telegram-claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'
 ```
 
 Host-level verification before and after replacement:
@@ -76,8 +76,8 @@ The `0.01` and `0.05` Claude probe budgets were too low for Claude Code CLI. `0.
 ## Inspection commands
 
 ```bash
-DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json
-DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor logs canary
+DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json
+DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor logs canary
 tmux capture-pane -t orgrimmar-canary -p -S -20
 ```
 

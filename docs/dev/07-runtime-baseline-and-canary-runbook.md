@@ -8,7 +8,7 @@ This document is an execution artifact for the tmux-first migration. It does not
 
 - Do not run old and new Telegram `getUpdates` consumers on the same production bot token.
 - Do not unload, load, bootstrap, bootout, or mutate production launchd jobs without explicit operator approval.
-- Do not edit `/Users/jasonqwwen/.claude-lab/shared/gateway/config.json` during canary work.
+- Do not edit `/Users/<user>/.claude-lab/shared/gateway/config.json` during canary work.
 - Do not read or print token/key contents. Use token file existence and path shape only.
 - Do not default to `--dangerously-skip-permissions`.
 - Use a separate test bot token for the canary.
@@ -18,7 +18,7 @@ This document is an execution artifact for the tmux-first migration. It does not
 
 ### Documentation repo
 
-- Repo: `qwwiwi-channel-telegram-Claude-code`
+- Repo: `channel-telegram-claude-code`
 - Role: migration documentation and GoalBuddy control board.
 - Implementation source: none in the repo at the start of this tranche.
 - Primary migration plan: `docs/06-tmux-migration-goal-plan.md`
@@ -26,14 +26,14 @@ This document is an execution artifact for the tmux-first migration. It does not
 
 ### Current production gateway
 
-- Live path: `/Users/jasonqwwen/.claude-lab/shared/gateway`
-- Main file: `/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`
+- Live path: `/Users/<user>/.claude-lab/shared/gateway`
+- Main file: `/Users/<user>/.claude-lab/shared/gateway/gateway.py`
 - Size observed: 3,748 lines.
-- Launchd plist: `/Users/jasonqwwen/Library/LaunchAgents/ai.orgrimmar.gateway.plist`
+- Launchd plist: `/Users/<user>/Library/LaunchAgents/ai.orgrimmar.gateway.plist`
 - Launchd label: `ai.orgrimmar.gateway`
-- Program shape: `/opt/homebrew/bin/python3 /Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`
-- Working directory: `/Users/jasonqwwen/.claude-lab/shared/gateway`
-- Stdout/stderr: files under `/Users/jasonqwwen/.claude-lab/shared/gateway`
+- Program shape: `/opt/homebrew/bin/python3 /Users/<user>/.claude-lab/shared/gateway/gateway.py`
+- Working directory: `/Users/<user>/.claude-lab/shared/gateway`
+- Stdout/stderr: files under `/Users/<user>/.claude-lab/shared/gateway`
 - KeepAlive: crash restart policy enabled.
 
 ### Current gateway behavior to preserve
@@ -87,7 +87,7 @@ Observed shared config shape:
 
 ### Existing channel prototype
 
-- Path: `/Users/jasonqwwen/.claude-lab/shared/channels/orgrimmar-inbox`
+- Path: `/Users/<user>/.claude-lab/shared/channels/orgrimmar-inbox`
 - Files: `server.ts`, `package.json`, `bun.lock`
 - Runtime: Bun + `@modelcontextprotocol/sdk`
 - Capability: experimental `claude/channel`
@@ -115,7 +115,7 @@ Important blocker: `claude --help | rg "channels|dangerously-load|permission|pri
 These commands are local/read-only or limited to this docs repo:
 
 ```bash
-node /Users/jasonqwwen/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml
+node /Users/<user>/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml
 claude --version
 claude --help | rg "channels|dangerously-load|permission|print|resume|session-id"
 bun --version
@@ -126,7 +126,7 @@ pytest --version
 Gateway tests can be run only from the deployed gateway path and should stay clear of production runtime files:
 
 ```bash
-cd /Users/jasonqwwen/.claude-lab/shared/gateway
+cd /Users/<user>/.claude-lab/shared/gateway
 pytest tests/test_gateway_l4_http.py
 ```
 

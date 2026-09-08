@@ -1,6 +1,6 @@
 # Миграция с jarvis-telegram-gateway
 
-Этот документ — для тех, у кого уже работает Python `claude -p` gateway (репо [qwwiwi/jarvis-telegram-gateway](https://github.com/qwwiwi/jarvis-telegram-gateway) или приватный fork [qwwiwi/gateway-dashis-agents](https://github.com/qwwiwi/gateway-dashis-agents)), и нужно переехать на плагин до **2026-06-15**.
+Этот документ — для тех, у кого уже работает Python `claude -p` gateway (репо [izmukovvladimir-cyber/jarvis-telegram-gateway](https://github.com/izmukovvladimir-cyber/jarvis-telegram-gateway) или приватный fork [izmukovvladimir-cyber/gateway-dashis-agents](https://github.com/izmukovvladimir-cyber/gateway-dashis-agents)), и нужно переехать на плагин до **2026-06-15**.
 
 После этой даты Anthropic разделяет billing: `claude -p` (Agent SDK) уходит в отдельный $200/мес pool, отдельный от Max. Любой `claude -p` spawn = расход из SDK pool. Старая gateway-архитектура перестанет быть экономичной.
 

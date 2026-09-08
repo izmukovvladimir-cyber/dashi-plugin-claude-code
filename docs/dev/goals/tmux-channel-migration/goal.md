@@ -2,7 +2,7 @@
 
 ## Original Request
 
-Поставить GoalBuddy/native `/goal` для Codex и выполнить задачу из `qwwiwi-channel-telegram-Claude-code` через `/goal`.
+Поставить GoalBuddy/native `/goal` для Codex и выполнить задачу из `channel-telegram-claude-code` через `/goal`.
 
 ## Interpreted Outcome
 
@@ -15,10 +15,10 @@ Turn the existing tmux migration plan into an executable GoalBuddy run that can 
 - `docs/05-success-criteria.md`
 - `docs/06-tmux-migration-goal-plan.md`
 - Local related repositories and runtime paths discovered by Scout, including:
-  - `/Users/jasonqwwen/projects/jarvis-telegram-gateway`
-  - `/Users/jasonqwwen/projects/agents-edgelab`
-  - `/Users/jasonqwwen/.claude-lab/shared/gateway`
-  - `/Users/jasonqwwen/Library/LaunchAgents`
+  - `/Users/<user>/projects/jarvis-telegram-gateway`
+  - `/Users/<user>/projects/agents-edgelab`
+  - `/Users/<user>/.claude-lab/shared/gateway`
+  - `/Users/<user>/Library/LaunchAgents`
 
 ## Non-Negotiable Constraints
 
