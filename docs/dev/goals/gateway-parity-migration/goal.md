@@ -2,16 +2,16 @@
 
 ## Objective
 
-Enable jarvis-telegram-gateway parity in the running qwwiwi canary Telegram Claude bot through successive safe, verified local slices, starting with a locally testable command-parity slice.
+Enable jarvis-telegram-gateway parity in the running EdgeLab canary Telegram Claude bot through successive safe, verified local slices, starting with a locally testable command-parity slice.
 
 ## Original Request
 
-Migrate gateway parity for the running canary Telegram Claude bot. Treat `/goat` as `/goal`. Compare this repo with `/Users/jasonqwwen/projects/jarvis-telegram-gateway`, especially `gateway.py` and README feature surface. Produce a feature parity matrix, choose a safe first canary implementation slice, use TDD, commit and push verified docs/code progress, and leave GoalBuddy active on the next smoke-test/migration task.
+Migrate gateway parity for the running canary Telegram Claude bot. Treat `/goat` as `/goal`. Compare this repo with `/Users/<user>/projects/jarvis-telegram-gateway`, especially `gateway.py` and README feature surface. Produce a feature parity matrix, choose a safe first canary implementation slice, use TDD, commit and push verified docs/code progress, and leave GoalBuddy active on the next smoke-test/migration task.
 
 ## Intake Summary
 
 - Input shape: `existing_plan`
-- Audience: qwwiwi canary Telegram Claude bot operator and future migration agents
+- Audience: EdgeLab canary Telegram Claude bot operator and future migration agents
 - Authority: `requested`
 - Proof type: `test`
 - Completion proof: local tests and canary-safe smoke evidence show the selected gateway capabilities work without exposing secrets, touching production token/config/launchd/tmux state, or violating one-token-one-consumer canary operation.

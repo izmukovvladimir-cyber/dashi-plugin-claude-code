@@ -8,9 +8,9 @@ goal:
   status: active
   intake:
     original_request: "Migrate gateway parity for canary Telegram Claude bot; treat /goat as /goal; compare jarvis gateway; use TDD; commit and push verified progress; leave GoalBuddy active."
-    interpreted_outcome: "The qwwiwi canary bot gains verified incremental gateway parity without secret exposure or unsafe live runtime changes."
+    interpreted_outcome: "The EdgeLab canary bot gains verified incremental gateway parity without secret exposure or unsafe live runtime changes."
     input_shape: existing_plan
-    audience: "qwwiwi canary Telegram Claude bot operator"
+    audience: "EdgeLab canary Telegram Claude bot operator"
     authority: requested
     proof_type: test
     completion_proof: "Feature parity slices are implemented and verified locally, then smoke-tested safely against canary without production token/config/tmux changes."
@@ -24,7 +24,7 @@ goal:
       - "Webhook injection and produced-file delivery safety."
       - "Claude session persistence through claude --resume."
     existing_plan_facts:
-      - "Compare with /Users/jasonqwwen/projects/jarvis-telegram-gateway, especially gateway.py and README."
+      - "Compare with /Users/<user>/projects/jarvis-telegram-gateway, especially gateway.py and README."
       - "Cover commands, image/photo, document/video/sticker, voice/audio/video_note transcription, reply/forward context, reactions, callbacks, group routing, Markdown HTML, produced files, webhook injection, memory hooks, streaming/progress, and claude --resume."
       - "First produce a feature parity matrix and choose a safe first canary implementation slice."
       - "Use TDD for implementation."
@@ -75,32 +75,32 @@ tasks:
     assignee: Scout
     status: done
     reasoning_hint: default
-    objective: "Map qwwiwi canary bot and jarvis gateway feature parity, including a matrix and evidence paths."
+    objective: "Map EdgeLab canary bot and jarvis gateway feature parity, including a matrix and evidence paths."
     inputs:
       - "README and relevant docs in this repo."
       - "scripts and source files for the canary Telegram bot."
-      - "/Users/jasonqwwen/projects/jarvis-telegram-gateway/README*"
-      - "/Users/jasonqwwen/projects/jarvis-telegram-gateway/gateway.py"
+      - "/Users/<user>/projects/jarvis-telegram-gateway/README*"
+      - "/Users/<user>/projects/jarvis-telegram-gateway/gateway.py"
     constraints:
       - "Read-only."
       - "Do not print or read secret token files."
       - "Do not inspect production launchd jobs, gateway config secrets, or tmux session contents."
     expected_output:
       - "Feature parity matrix."
-      - "Current qwwiwi implementation evidence."
+      - "Current implementation evidence."
       - "Reference gateway evidence."
       - "Candidate safe first canary slice."
     receipt:
       result: done
       note: "notes/T001-parity-matrix.md"
-      summary: "Mapped jarvis gateway feature surface against the qwwiwi canary bot and identified command normalization for /goat -> /goal as the safest first local slice."
+      summary: "Mapped jarvis gateway feature surface against the EdgeLab canary bot and identified command normalization for /goat -> /goal as the safest first local slice."
       evidence:
         - "scripts/dashi-telegram-canary-bot"
         - "tests/test_dashi_telegram_canary_bot.py"
         - "docs/10-canary-telegram-smoke-bot.md"
         - "docs/07-runtime-baseline-and-canary-runbook.md"
-        - "/Users/jasonqwwen/projects/jarvis-telegram-gateway/README.md"
-        - "/Users/jasonqwwen/projects/jarvis-telegram-gateway/gateway.py"
+        - "/Users/<user>/projects/jarvis-telegram-gateway/README.md"
+        - "/Users/<user>/projects/jarvis-telegram-gateway/gateway.py"
   - id: T002
     type: judge
     assignee: Judge

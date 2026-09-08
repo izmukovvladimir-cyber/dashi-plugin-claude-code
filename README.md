@@ -881,4 +881,4 @@ Internal dev docs (PR history, review specs) are in [docs/dev/](docs/dev/) — o
 
 Apache 2.0 (see [LICENSE](LICENSE)). A fork of the idea behind Anthropic's Telegram plugin, with full Jarvis Gateway parity.
 
-[@qwwiwi](https://github.com/qwwiwi) (Dashi Eshiev) · EdgeLab AI. Issues / PRs welcome; for migration — open an issue tagged `migration` with a description of your setup.
+[@izmukovvladimir-cyber](https://github.com/izmukovvladimir-cyber) (Vladimir Izhmukov) · EdgeLab AI. Issues / PRs welcome; for migration — open an issue tagged `migration` with a description of your setup.

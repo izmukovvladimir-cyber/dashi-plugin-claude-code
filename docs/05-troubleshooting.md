@@ -601,7 +601,7 @@ launchctl kickstart -k gui/$(id -u)/com.dashi-plugin.channel-<agent>  # macOS
 
 Аналогично для текстовой версии (без callback_query): отправлять пронумерованный список текстом, парсить ответ юзера на цифру, send-keys → Enter.
 
-Issue: https://github.com/qwwiwi/dashi-plugin-claude-code/issues (создайте issue с label `enhancement`).
+Issue: https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/issues (создайте issue с label `enhancement`).
 
 ### Как не повторить
 
@@ -630,7 +630,7 @@ sudo -u <service-user> tmux send-keys -t channel-<agent> Down Down Enter
 
 # Section B — Pre-cutover migration only (Python gateway.py) — applicable until 2026-06-15
 
-> **Когда читать эту секцию.** Только если у вас уже работает legacy Python `gateway.py` (репо `qwwiwi/jarvis-telegram-gateway` или приватный fork `qwwiwi/gateway-dashis-agents`) и вы мигрируете на текущий Bun-плагин до cutover 2026-06-15. Все остальные читатели — пропустите.
+> **Когда читать эту секцию.** Только если у вас уже работает legacy Python `gateway.py` (репо `izmukovvladimir-cyber/jarvis-telegram-gateway` или приватный fork `izmukovvladimir-cyber/gateway-dashis-agents`) и вы мигрируете на текущий Bun-плагин до cutover 2026-06-15. Все остальные читатели — пропустите.
 >
 > После 2026-06-15 Anthropic разделяет billing: `claude -p` (Agent SDK) уходит в отдельный $200/мес pool. Любой `claude -p` spawn = расход из SDK pool. Старая gateway-архитектура перестаёт быть экономичной, и эти проблемы теряют актуальность. См. [04-migration-from-gateway.md](04-migration-from-gateway.md) для пошагового перехода.
 
@@ -784,4 +784,4 @@ sudo systemctl restart channel-<agent>
 5. Tests: `cd plugin && bun test` — если тесты упали, у вас core bug, не env-проблема
 6. Открыть issue с описанием: версия Claude Code, версия Bun, `systemctl status` output, tmux capture последних 100 строк, `getWebhookInfo` response.
 
-GitHub Issues: https://github.com/qwwiwi/dashi-plugin-claude-code/issues
+GitHub Issues: https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/issues

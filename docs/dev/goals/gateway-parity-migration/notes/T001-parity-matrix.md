@@ -2,18 +2,18 @@
 
 ## Evidence Read
 
-- Current qwwiwi canary bot: `scripts/dashi-telegram-canary-bot`
+- Current EdgeLab canary bot: `scripts/dashi-telegram-canary-bot`
 - Current canary tests: `tests/test_dashi_telegram_canary_bot.py`
 - Current runbook: `docs/10-canary-telegram-smoke-bot.md`
 - Current migration baseline: `docs/07-runtime-baseline-and-canary-runbook.md`
-- Reference gateway README: `/Users/jasonqwwen/projects/jarvis-telegram-gateway/README.md`
-- Reference gateway implementation: `/Users/jasonqwwen/projects/jarvis-telegram-gateway/gateway.py`
+- Reference gateway README: `/Users/<user>/projects/jarvis-telegram-gateway/README.md`
+- Reference gateway implementation: `/Users/<user>/projects/jarvis-telegram-gateway/gateway.py`
 
 No token files, production launchd jobs, gateway configs, or live tmux pane contents were read.
 
 ## Feature Parity Matrix
 
-| Capability | Reference gateway evidence | qwwiwi canary evidence | Current status | Migration note |
+| Capability | Reference gateway evidence | EdgeLab canary evidence | Current status | Migration note |
 |---|---|---|---|---|
 | Telegram long-poll | `gateway.py` producer uses `getUpdates`, per-agent offsets, queues | `TelegramClient.get_updates`, `run_once`, offset file | Partial | Canary has simple single-consumer polling and 409 conflict handling, not producer-consumer queueing. |
 | Text DM replies | `process_update` invokes Claude and `send_message` replies to original message | `run_once` sends ACK or Claude fallback reply | Partial | Works for basic text, no reply-to, HTML, chunking, or session resume. |

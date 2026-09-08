@@ -55,9 +55,9 @@ Next step (operator, interactive):
 
   2. Launch the channel plugin in a tmux session:
        tmux new-session -d -s orgrimmar-canary-channel \
-         -c /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code/plugin \
+         -c /Users/<user>/channel-telegram-claude-code/plugin \
          'TELEGRAM_BOT_TOKEN=$(cat ~/.claude-lab/shared/channel-runtime/canary/secrets/telegram-bot-token) \
-          TELEGRAM_STATE_DIR=/Users/jasonqwwen/.claude-lab/shared/channel-runtime/canary/telegram \
+          TELEGRAM_STATE_DIR=/Users/<user>/.claude-lab/shared/channel-runtime/canary/telegram \
           TELEGRAM_WORKSPACE_ROOT=/tmp/dashi-channel-canary-workspace \
           claude --dangerously-load-development-channels server:dashi-channel'
 

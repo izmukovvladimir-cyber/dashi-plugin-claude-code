@@ -4,7 +4,7 @@ Ordered procedure. The doctor automates the checks; this is the human/agent
 playbook around them. Commands are verbatim; substitute `<agent>`,
 `<service-user>`, paths, and tokens.
 
-> Concepts. **OLD** = Python daemon (`qwwiwi/jarvis-telegram-gateway`), spawns a
+> Concepts. **OLD** = Python daemon (`izmukovvladimir-cyber/jarvis-telegram-gateway`), spawns a
 > new `claude -p` per message. **NEW** = Bun+TypeScript plugin, one live session,
 > polls Telegram via `getUpdates`. Invariant: one process = one agent = one bot =
 > one workspace. Migration deadline: **2026-06-15** (per-message spawn moves to a

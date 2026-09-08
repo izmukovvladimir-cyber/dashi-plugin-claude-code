@@ -1,7 +1,7 @@
 # dashi-plugin webhook listener
 
 A small Python aiohttp service that accepts swarm webhooks from
-[dashi-gbrain](https://github.com/qwwiwi/dashi-gbrain) and spawns a
+[dashi-gbrain](https://github.com/izmukovvladimir-cyber/dashi-gbrain) and spawns a
 headless `claude -p` invocation against the configured agent workspace.
 
 It is the inter-agent ingress that complements the dashi-channel plugin
@@ -76,7 +76,7 @@ sudo systemctl enable --now dashi-plugin-webhook
 ## Bring-your-own swarm endpoint
 
 The v6.3 enrichment fallback expects `WEBHOOK_GBRAIN_SWARM_URL` to point at
-**your own** [dashi-gbrain](https://github.com/qwwiwi/dashi-gbrain) instance.
+**your own** [dashi-gbrain](https://github.com/izmukovvladimir-cyber/dashi-gbrain) instance.
 This repo intentionally ships no default — you stand up your own swarm
 coordinator and expose it over HTTPS. Two common patterns:
 

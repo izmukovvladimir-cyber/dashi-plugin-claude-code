@@ -9,10 +9,10 @@ goal:
   tranche: "Validate the existing tmux migration plan, choose the first safe local work package, execute verified local progress, and continue until this tranche is audited."
   status: active
   intake:
-    original_request: "Поставить goal тебе и сделать задачу через эту команду для qwwiwi-channel-telegram-Claude-code."
+    original_request: "Поставить goal тебе и сделать задачу через эту команду для channel-telegram-claude-code."
     interpreted_outcome: "Use GoalBuddy/native /goal to execute the existing tmux-first Telegram channel migration plan safely."
     input_shape: existing_plan
-    audience: "qwwiwi / Orgrimmar Telegram agents operator"
+    audience: "EdgeLab Telegram agents operator"
     authority: requested
     proof_type: artifact
     completion_proof: "A verified GoalBuddy tranche with receipts, safe local artifacts or code changes, and an audit against docs/05-success-criteria.md and docs/06-tmux-migration-goal-plan.md."
@@ -71,16 +71,16 @@ tasks:
     assignee: Scout
     status: done
     reasoning_hint: low
-    objective: "Map the qwwiwi migration repo, related local repositories/runtime paths, current gateway surfaces, verification commands, and the safest first execution candidates."
+    objective: "Map the migration repo, related local repositories/runtime paths, current gateway surfaces, verification commands, and the safest first execution candidates."
     inputs:
       - "README.md"
       - "docs/03-plan.md"
       - "docs/05-success-criteria.md"
       - "docs/06-tmux-migration-goal-plan.md"
-      - "/Users/jasonqwwen/projects/jarvis-telegram-gateway"
-      - "/Users/jasonqwwen/projects/agents-edgelab"
-      - "/Users/jasonqwwen/.claude-lab/shared/gateway"
-      - "/Users/jasonqwwen/Library/LaunchAgents"
+      - "/Users/<user>/projects/jarvis-telegram-gateway"
+      - "/Users/<user>/projects/agents-edgelab"
+      - "/Users/<user>/.claude-lab/shared/gateway"
+      - "/Users/<user>/Library/LaunchAgents"
     constraints:
       - "Read-only."
       - "Do not print secrets, bot tokens, private keys, OAuth data, or full production configs."
@@ -104,10 +104,10 @@ tasks:
         - "docs/04-codex-review.md"
         - "docs/05-success-criteria.md"
         - "docs/06-tmux-migration-goal-plan.md"
-        - "/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py"
-        - "/Users/jasonqwwen/.claude-lab/shared/gateway/tests/test_gateway_l4_http.py"
-        - "/Users/jasonqwwen/.claude-lab/shared/channels/orgrimmar-inbox/server.ts"
-        - "/Users/jasonqwwen/Library/LaunchAgents/ai.orgrimmar.gateway.plist"
+        - "/Users/<user>/.claude-lab/shared/gateway/gateway.py"
+        - "/Users/<user>/.claude-lab/shared/gateway/tests/test_gateway_l4_http.py"
+        - "/Users/<user>/.claude-lab/shared/channels/orgrimmar-inbox/server.ts"
+        - "/Users/<user>/Library/LaunchAgents/ai.orgrimmar.gateway.plist"
       spawned_tasks: []
   - id: T002
     type: judge
@@ -423,9 +423,9 @@ tasks:
     verify:
       - "python3 -m unittest tests.test_dashi_channel_supervisor tests.test_dashi_telegram_canary_bot -v"
       - "python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
-      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
+      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
       - "tmux ls"
-      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
+      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
     stop_if:
       - "Need to print, copy, or commit the Telegram token value."
       - "Need production token files, launchd jobs, live gateway config, or production tmux sessions."
@@ -450,13 +450,13 @@ tasks:
           status: pass
         - cmd: "PYTHONPYCACHEPREFIX=/private/tmp/dashi-channel-supervisor-pycache-main python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
           status: pass
-        - cmd: "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
+        - cmd: "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
           status: pass
         - cmd: "tmux new-session -d -s orgrimmar-canary ..."
           status: pass
         - cmd: "tmux ls"
           status: pass
-        - cmd: "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
+        - cmd: "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
           status: pass
       summary: "Implemented a Python stdlib canary Telegram smoke runner that reads the token only from the canary secret file, polls Telegram with offset persistence, sends a short ACK reply, reports 409 getUpdates conflicts clearly, and runs in tmux session orgrimmar-canary."
       remaining_blockers:
@@ -577,7 +577,7 @@ tasks:
         - "PYTHONPYCACHEPREFIX=/private/tmp/dashi-channel-supervisor-pycache-main python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
         - "claude auth status"
         - "tmux ls"
-        - "node /Users/jasonqwwen/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
+        - "node /Users/<user>/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
       stop_if:
         - "Need to print, copy, or commit the canary Telegram token value."
         - "Need production token files, launchd jobs, live gateway config, or production tmux sessions."
@@ -601,7 +601,7 @@ tasks:
       - "PYTHONPYCACHEPREFIX=/private/tmp/dashi-channel-supervisor-pycache-main python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
       - "claude auth status"
       - "tmux ls"
-      - "node /Users/jasonqwwen/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
+      - "node /Users/<user>/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
     stop_if:
       - "Need to print, copy, or commit the canary Telegram token value."
       - "Need production token files, launchd jobs, live gateway config, or production tmux sessions."
@@ -726,7 +726,7 @@ tasks:
           note: "Before replacement, the pane command was the ACK canary runner without `--reply-mode claude`."
         - cmd: "tmux kill-session -t orgrimmar-canary"
           status: pass
-        - cmd: "tmux new-session -d -s orgrimmar-canary -c /Users/jasonqwwen/qwwiwi-channel-telegram-Claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'"
+        - cmd: "tmux new-session -d -s orgrimmar-canary -c /Users/<user>/channel-telegram-claude-code 'env DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime PYTHONUNBUFFERED=1 scripts/dashi-telegram-canary-bot --reply-mode claude --claude-max-budget-usd 0.20 --poll-timeout 20'"
           status: pass
         - cmd: "tmux ls"
           status: pass
@@ -777,10 +777,10 @@ checks:
       - "DASHI_CHANNEL_RUNTIME_ROOT=/private/tmp/dashi-channel-supervisor-check scripts/dashi-channel-supervisor start canary --json"
       - "python3 -m unittest tests.test_dashi_channel_supervisor tests.test_dashi_telegram_canary_bot -v"
       - "python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
-      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
+      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-telegram-canary-bot --once --poll-timeout 1"
       - "tmux ls"
-      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/jasonqwwen/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
-      - "node /Users/jasonqwwen/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
+      - "DASHI_CHANNEL_RUNTIME_ROOT=/Users/<user>/.claude-lab/shared/channel-runtime scripts/dashi-channel-supervisor status canary --json"
+      - "node /Users/<user>/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml"
       - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_dashi_channel_supervisor tests.test_dashi_telegram_canary_bot -v"
       - "PYTHONPYCACHEPREFIX=/private/tmp/dashi-channel-supervisor-pycache-main python3 -m py_compile scripts/dashi-channel-supervisor scripts/dashi-telegram-canary-bot"
       - "git diff --check"

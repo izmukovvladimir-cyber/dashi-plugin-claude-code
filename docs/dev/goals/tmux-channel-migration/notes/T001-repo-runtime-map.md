@@ -8,21 +8,21 @@ Secrets were not intentionally read or recorded. Evidence below uses paths, coun
 
 ## Repo Map
 
-- `qwwiwi-channel-telegram-Claude-code`: documentation/control repo. Contains migration docs and GoalBuddy control files only; no implementation source beyond generated HTML artifacts.
-- `/Users/jasonqwwen/projects/jarvis-telegram-gateway`: public/generic gateway repo. Contains `gateway.py`, `requirements.txt`, and README. `gateway.py` is 3,472 lines.
-- `/Users/jasonqwwen/.claude-lab/shared/gateway`: deployed/live gateway path. Contains `gateway.py`, `config.json`, shell maintenance scripts, logs/state/media directories, and tests. `gateway.py` is 3,748 lines.
-- `/Users/jasonqwwen/.claude-lab/shared/channels/orgrimmar-inbox`: existing Bun/TypeScript MCP channel prototype. Contains `server.ts`, `package.json`, and `bun.lock`; no `.git` repository.
-- `/Users/jasonqwwen/projects/agents-edgelab`: Tyrande/Hermes repo. README describes Hermes Agent on `165.245.219.131` with MiniMax and `hermes gateway start`.
-- `/Users/jasonqwwen/Library/LaunchAgents`: production launchd surfaces include Orgrimmar gateway, gateway healthcheck/logrotate, multiple Silvana/Kaelthas/Garrosh cron jobs, and OpenClaw gateway.
+- `channel-telegram-claude-code`: documentation/control repo. Contains migration docs and GoalBuddy control files only; no implementation source beyond generated HTML artifacts.
+- `/Users/<user>/projects/jarvis-telegram-gateway`: public/generic gateway repo. Contains `gateway.py`, `requirements.txt`, and README. `gateway.py` is 3,472 lines.
+- `/Users/<user>/.claude-lab/shared/gateway`: deployed/live gateway path. Contains `gateway.py`, `config.json`, shell maintenance scripts, logs/state/media directories, and tests. `gateway.py` is 3,748 lines.
+- `/Users/<user>/.claude-lab/shared/channels/orgrimmar-inbox`: existing Bun/TypeScript MCP channel prototype. Contains `server.ts`, `package.json`, and `bun.lock`; no `.git` repository.
+- `/Users/<user>/projects/agents-edgelab`: Tyrande/Hermes repo. README describes Hermes Agent on `165.245.219.131` with MiniMax and `hermes gateway start`.
+- `/Users/<user>/Library/LaunchAgents`: production launchd surfaces include Orgrimmar gateway, gateway healthcheck/logrotate, multiple Silvana/Kaelthas/Garrosh cron jobs, and OpenClaw gateway.
 
 ## Current Gateway Evidence
 
-- Active Orgrimmar launchd job path: `/Users/jasonqwwen/Library/LaunchAgents/ai.orgrimmar.gateway.plist`.
+- Active Orgrimmar launchd job path: `/Users/<user>/Library/LaunchAgents/ai.orgrimmar.gateway.plist`.
 - Orgrimmar gateway launchd shape:
   - label: `ai.orgrimmar.gateway`
   - program: `/opt/homebrew/bin/python3`
-  - argument: `/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`
-  - working directory: `/Users/jasonqwwen/.claude-lab/shared/gateway`
+  - argument: `/Users/<user>/.claude-lab/shared/gateway/gateway.py`
+  - working directory: `/Users/<user>/.claude-lab/shared/gateway`
   - `RunAtLoad`: true
   - `KeepAlive`: crashed/successful-exit policy
   - stdout/stderr in the shared gateway directory
@@ -37,7 +37,7 @@ Secrets were not intentionally read or recorded. Evidence below uses paths, coun
 
 ## Gateway Behavior To Preserve
 
-Evidence from `/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`:
+Evidence from `/Users/<user>/.claude-lab/shared/gateway/gateway.py`:
 
 - Claude invocation is currently `claude -p` with `--output-format stream-json`, `--input-format text`, `--verbose`, `--permission-mode bypassPermissions`, and session tracking through `--session-id` / `--resume`.
 - Per-agent Telegram long-poll uses `getUpdates`; producer/consumer architecture separates out-of-band commands from regular turns.
@@ -48,11 +48,11 @@ Evidence from `/Users/jasonqwwen/.claude-lab/shared/gateway/gateway.py`:
 - Group and routing behavior includes user allowlist, group allowlist, group `group_allow_all`, topic routing, bot mention/name/reply addressing, and reply context injection.
 - Webhook endpoint is `POST /hooks/agent`; it requires bearer auth and validates target chat against allowlists.
 - Memory paths include hot memory append, verbose JSONL capture, OpenViking/L4 semantic push, group context injection, and compact/handoff flows.
-- Tests currently present: `/Users/jasonqwwen/.claude-lab/shared/gateway/tests/test_gateway_l4_http.py` with 404 lines of L4 HTTP parity coverage. Fixture imports gateway in a temp cwd to avoid racing live state.
+- Tests currently present: `/Users/<user>/.claude-lab/shared/gateway/tests/test_gateway_l4_http.py` with 404 lines of L4 HTTP parity coverage. Fixture imports gateway in a temp cwd to avoid racing live state.
 
 ## Existing Channel Prototype Evidence
 
-`/Users/jasonqwwen/.claude-lab/shared/channels/orgrimmar-inbox/server.ts` is a Bun MCP server with:
+`/Users/<user>/.claude-lab/shared/channels/orgrimmar-inbox/server.ts` is a Bun MCP server with:
 
 - `@modelcontextprotocol/sdk` stdio transport.
 - experimental `claude/channel` capability.
@@ -80,13 +80,13 @@ Gaps against tmux/Telegram migration:
 
 Safe local/read-only:
 
-- `node /Users/jasonqwwen/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml`
+- `node /Users/<user>/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.6/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/tmux-channel-migration/state.yaml`
 - `claude --version`
 - `claude --help | rg "channels|dangerously-load|permission|print|resume|session-id"`
 - `bun --version`
 - `tmux -V`
 - `pytest --version`
-- `pytest tests/test_gateway_l4_http.py` from `/Users/jasonqwwen/.claude-lab/shared/gateway`
+- `pytest tests/test_gateway_l4_http.py` from `/Users/<user>/.claude-lab/shared/gateway`
 
 Useful but should be bounded:
 
@@ -128,10 +128,10 @@ Production-gated:
    - Scope: document and/or script a redacted pre-flight check that records version, help flag presence, Bun, tmux, and pytest availability.
    - Verification: run the script locally; ensure it prints no secrets and does not touch services.
 
-4. **Work in `/Users/jasonqwwen/.claude-lab/shared/channels/orgrimmar-inbox` only after explicit allowed_files include that path.**
+4. **Work in `/Users/<user>/.claude-lab/shared/channels/orgrimmar-inbox` only after explicit allowed_files include that path.**
    - Why: it already uses `claude/channel`, but it is not a Telegram runtime and is not in git.
    - Stop if: any change requires credentials, orgbus live writes, Telegram tokens, or production session start.
 
-5. **Live gateway parity tests only after a bounded task permits `/Users/jasonqwwen/.claude-lab/shared/gateway/tests` and avoids runtime dirs.**
+5. **Live gateway parity tests only after a bounded task permits `/Users/<user>/.claude-lab/shared/gateway/tests` and avoids runtime dirs.**
    - Why: deployed gateway tests exist, but the working tree is noisy and live-adjacent.
    - Stop if: importing or tests attempt to mutate live gateway working directory.

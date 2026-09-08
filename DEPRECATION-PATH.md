@@ -2,8 +2,8 @@
 
 Если вы пришли из:
 
-- [qwwiwi/jarvis-telegram-gateway](https://github.com/qwwiwi/jarvis-telegram-gateway) (Python, public)
-- [qwwiwi/gateway-dashis-agents](https://github.com/qwwiwi/gateway-dashis-agents) (Python, private fork)
+- [izmukovvladimir-cyber/jarvis-telegram-gateway](https://github.com/izmukovvladimir-cyber/jarvis-telegram-gateway) (Python, public)
+- [izmukovvladimir-cyber/gateway-dashis-agents](https://github.com/izmukovvladimir-cyber/gateway-dashis-agents) (Python, private fork)
 
 — оба репо **deprecated с 2026-06-15**.
 
@@ -24,7 +24,7 @@ Anthropic 15 июня 2026 разделяет billing:
 
 - **до 2026-06-15** — обе архитектуры работают параллельно. Мигрируйте спокойно.
 - **2026-06-15** — Anthropic разделяет billing. Старая архитектура продолжает работать технически, но дорого.
-- **2026-09-15** — `qwwiwi/jarvis-telegram-gateway` будет переведён в archived состояние (read-only). PR/issues закроются.
+- **2026-09-15** — `izmukovvladimir-cyber/jarvis-telegram-gateway` будет переведён в archived состояние (read-only). PR/issues закроются.
 - **2026-12-15** — последний day когда мы держим compatibility patches для старого gateway. После этой даты — нет fix'ов, нет support.
 
 ## Как мигрировать
@@ -59,8 +59,8 @@ Anthropic 15 июня 2026 разделяет billing:
 
 ## Поддержка миграции
 
-- **Issues по миграции** — [github.com/qwwiwi/dashi-plugin-claude-code/issues](https://github.com/qwwiwi/dashi-plugin-claude-code/issues) с тегом `migration`. Опишите ваш текущий setup максимально подробно.
-- **Telegram чат поддержки** — community-run; проверьте актуальный invite через [issues репозитория](https://github.com/qwwiwi/dashi-plugin-claude-code/issues), pinned issue содержит текущую ссылку.
+- **Issues по миграции** — [github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/issues](https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/issues) с тегом `migration`. Опишите ваш текущий setup максимально подробно.
+- **Telegram чат поддержки** — community-run; проверьте актуальный invite через [issues репозитория](https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code/issues), pinned issue содержит текущую ссылку.
 
 ## Не успеваете до 2026-06-15?
 

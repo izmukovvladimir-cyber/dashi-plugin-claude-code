@@ -867,4 +867,4 @@ DM-ответы автоматически апгрейдятся до `sendRich
 
 Apache 2.0 (см. [LICENSE](LICENSE)). Fork идеи Anthropic Telegram plugin с полной Jarvis Gateway parity.
 
-[@qwwiwi](https://github.com/qwwiwi) (Dashi Eshiev) · EdgeLab AI. Issues / PRs приветствуются; для миграции — issue с тегом `migration` и описанием setup.
+[@izmukovvladimir-cyber](https://github.com/izmukovvladimir-cyber) (Vladimir Izhmukov) · EdgeLab AI. Issues / PRs приветствуются; для миграции — issue с тегом `migration` и описанием setup.
