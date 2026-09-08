@@ -463,7 +463,7 @@ mkdir -p ~/.claude-lab/myagent/.claude ~/.claude-lab/myagent/secrets
 cd ~/.claude-lab/myagent/.claude
 
 # 3. Клонировать плагин ВНУТРЬ workspace (расположение критично — см. docs/02)
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin && bun install
 
 # 4. config + токен
@@ -703,7 +703,7 @@ $EDITOR "$WORKSPACE/CLAUDE.md"     # кто этот агент
 
 ```bash
 cd "$WORKSPACE/.claude"
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin
 bun install
 ```

@@ -54,7 +54,7 @@ workspace so Claude Code's upward CWD search finds the project `CLAUDE.md`:
 ```bash
 mkdir -p ~/.claude-lab/<agent>/.claude
 cd ~/.claude-lab/<agent>/.claude
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin
 bun install
 bun run typecheck     # 0 errors
