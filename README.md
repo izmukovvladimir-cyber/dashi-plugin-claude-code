@@ -473,7 +473,7 @@ mkdir -p ~/.claude-lab/myagent/.claude ~/.claude-lab/myagent/secrets
 cd ~/.claude-lab/myagent/.claude
 
 # 3. Clone the plugin INSIDE the workspace (location is critical — see docs/02)
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin && bun install
 
 # 4. config + token
@@ -716,7 +716,7 @@ $EDITOR "$WORKSPACE/CLAUDE.md"     # who this agent is
 
 ```bash
 cd "$WORKSPACE/.claude"
-git clone https://github.com/qwwiwi/dashi-plugin-claude-code.git
+git clone https://github.com/izmukovvladimir-cyber/dashi-plugin-claude-code.git
 cd dashi-plugin-claude-code/plugin
 bun install
 ```
