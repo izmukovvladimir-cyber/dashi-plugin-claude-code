@@ -3,7 +3,7 @@
 Если вы пришли из:
 
 - [izmukovvladimir-cyber/jarvis-telegram-gateway](https://github.com/izmukovvladimir-cyber/jarvis-telegram-gateway) (Python, public)
-- [izmukovvladimir-cyber/gateway-dashis-agents](https://github.com/izmukovvladimir-cyber/gateway-dashis-agents) (Python, private fork)
+- `gateway-dashis-agents` (Python, private fork)
 
 — оба репо **deprecated с 2026-06-15**.
 
