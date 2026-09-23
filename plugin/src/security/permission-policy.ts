@@ -164,7 +164,10 @@ const READ_ONLY_TOOLS = new Set<string>([
 ])
 
 // Tools that take a filesystem path we must policy-check.
-const READ_PATH_TOOLS = new Set<string>(['Read', 'NotebookRead'])
+// Инструменты, чей путь ОБЯЗАН проверяться на секретность. Grep/Glob/LS входят
+// сюда наравне с Read: поиск по файлу выдаёт его содержимое строками, то есть
+// это чтение — и запрет на чтение секретов должен работать одинаково для всех.
+const READ_PATH_TOOLS = new Set<string>(['Read', 'NotebookRead', 'Grep', 'Glob', 'LS'])
 const WRITE_PATH_TOOLS = new Set<string>(['Edit', 'Write', 'NotebookEdit', 'MultiEdit'])
 
 // ── Built-in hard rules (operator cannot relax) ─────────────────────────
@@ -179,6 +182,14 @@ const BUILTIN_DENY_PATHS: readonly string[] = [
   '**/*.key',
   '**/.secrets/**',
   '**/secrets/**',
+  // Сам каталог, без содержимого: шаблон с завершающим `/**` не совпадает с
+  // `~/.ssh` или `~/.secrets`, поэтому перечисление каталога (Glob/LS) проходило
+  // мимо запрета. Список файлов с ключами — это уже разведка, закрываем.
+  '**/.secrets',
+  '**/secrets',
+  '**/.ssh',
+  '**/.aws',
+  '**/.config/gcloud',
   '**/id_rsa*',
   '**/id_ed25519*',
   '**/.ssh/**',
@@ -2000,8 +2011,146 @@ function rulesMatch(
 }
 
 function extractPath(toolInput: Record<string, unknown>): string | undefined {
-  const fp = toolInput.file_path ?? toolInput.notebook_path
+  // `path` — поле Grep/Glob/LS. Без него поисковые инструменты приходили сюда
+  // БЕЗ пути, проверка секретных путей не выполнялась, а сами они помечены
+  // read-only → tier=allow. Итог: `Grep(pattern:"TOKEN", path:"~/.secrets")`
+  // возвращал строки с секретами там, где `Read` того же файла жёстко запрещён
+  // (сообщено внешним исследователем 2026-08-03, воспроизведено по коду).
+  const fp = toolInput.file_path ?? toolInput.notebook_path ?? toolInput.path
   return typeof fp === 'string' && fp.length > 0 ? fp : undefined
+}
+
+// ── Search scope (Grep/Glob) ────────────────────────────────────────────
+//
+// Checking the search ROOT is not enough: a search reads everything BELOW it.
+// `Grep(pattern:"TOKEN", path:"/home/user")` reads ~/.ssh and ~/.secrets (Claude
+// Code runs ripgrep with --hidden), and the secret can also sit in the filter
+// itself: `Grep(glob:"**/.env")`, `Glob(pattern:"/home/user/.ssh/*")`.
+// Two measures:
+//   1. A filter that names a secret (a segment matching a credential file or
+//      directory name) is a hard deny: that is targeted reading. This check is
+//      a heuristic and does not decide full glob intersection (`production.p?m`
+//      slips through). For Grep that is closed by measure 2: the exclusions come
+//      AFTER the user's globs and ripgrep lets the last matching glob win, so
+//      even an explicit secret glob returns nothing. For Glob the residue is
+//      file NAMES only, never contents.
+//   2. Every allowed Grep gets the secret paths appended as exclusion globs
+//      (`grepSecretExclusions`, emitted by the hook as updatedInput), so a broad
+//      search over a parent directory skips them instead of printing them.
+
+// Names a credential file/dir has, for filter segments whose wildcard must
+// expand INTO a secret name (`.e*`, `id_*`). Only segments with at least two
+// literal characters are tested, so `*.json` or `*s` stay ordinary searches.
+const SECRET_NAME_SAMPLES: readonly string[] = [
+  '.env', '.env.local', 'server.pem', 'server.key', '.secrets', 'secrets',
+  '.ssh', '.aws', 'id_rsa', 'id_ed25519',
+]
+
+const MAX_BRACE_ALTERNATIVES = 256
+
+// Iterative expansion with a hard budget: a filter with more alternatives than
+// the budget is NOT checked on a truncated set (that would skip the tail),
+// the caller denies it instead. Returns null when over budget.
+function expandBraces(glob: string): string[] | null {
+  const done: string[] = []
+  const queue: string[] = [glob]
+  while (queue.length > 0) {
+    const cur = queue.pop() as string
+    const m = /\{([^{}]*)\}/.exec(cur)
+    if (!m) {
+      done.push(cur)
+    } else {
+      const head = cur.slice(0, m.index)
+      const tail = cur.slice(m.index + m[0].length)
+      for (const alt of (m[1] ?? '').split(',')) queue.push(head + alt + tail)
+    }
+    if (done.length + queue.length > MAX_BRACE_ALTERNATIVES) return null
+  }
+  return done
+}
+
+// Mirrors how Claude Code splits Grep's `glob`: on whitespace, then on commas
+// OUTSIDE braces (`{.env,.aws}` stays one alternative group).
+function splitFilter(filter: string): string[] {
+  const out: string[] = []
+  for (const word of filter.split(/\s+/)) {
+    let depth = 0
+    let cur = ''
+    for (const ch of word) {
+      if (ch === '{') depth += 1
+      if (ch === '}') depth = Math.max(0, depth - 1)
+      if (ch === ',' && depth === 0) {
+        out.push(cur)
+        cur = ''
+      } else {
+        cur += ch
+      }
+    }
+    out.push(cur)
+  }
+  return out.filter(Boolean)
+}
+
+// Concrete paths a filter can match: wildcards collapsed to nothing and to a
+// plain name. A deny rule matching any of them means the filter reaches secrets.
+function filterWitnesses(glob: string): string[] {
+  const empty = glob.replace(/\*\*\//g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/\?/g, 'x')
+  const named = glob.replace(/\*\*\//g, '').replace(/\*\*/g, 'x').replace(/\*/g, 'x').replace(/\?/g, 'x')
+  const out = new Set<string>()
+  for (const w of [empty, named]) {
+    const trimmed = w.replace(/\/+$/, '').replace(/\/{2,}/g, '/')
+    if (trimmed.length === 0) continue
+    out.add(trimmed)
+    out.add(`${trimmed}/x`)
+  }
+  return [...out]
+}
+
+/** What in a search filter targets secrets, or undefined. */
+export function searchFilterSecretHit(filter: string): string | undefined {
+  for (const part of splitFilter(filter)) {
+    if (part.startsWith('!')) continue
+    const alts = expandBraces(part)
+    if (alts === null) return `more than ${MAX_BRACE_ALTERNATIVES} brace alternatives`
+    for (const alt of alts) {
+      const rule = matchPathRules(BUILTIN_DENY_PATHS, filterWitnesses(alt))
+      if (rule) return rule
+      for (const seg of alt.split('/')) {
+        if (seg.replace(/[*?]/g, '').length < 2) continue
+        for (const name of SECRET_NAME_SAMPLES) {
+          if (globMatch(seg, name)) return seg
+        }
+      }
+    }
+  }
+  return undefined
+}
+
+// Search roots inside /proc read other processes' environment and command
+// lines; the absolute /proc rules cannot be expressed as root-relative excludes.
+function searchRootInProc(pathCands: readonly string[]): boolean {
+  return pathCands.some((c) => c === '/proc' || c.startsWith('/proc/'))
+}
+
+// Exclusion globs for ripgrep, relative to the search root.
+// A search rooted at `/` also walks /proc, hence the two proc excludes.
+const GREP_SECRET_EXCLUDES: readonly string[] = [
+  ...BUILTIN_DENY_PATHS.filter((r) => r.startsWith('**/')),
+  '**/proc/*/environ',
+  '**/proc/*/cmdline',
+].map((r) => `!${r}`)
+
+/** Grep input with secret exclusions appended to its `glob`, or undefined for
+ * other tools. Claude Code splits `glob` on whitespace into separate --glob
+ * flags; ripgrep lets the later negation win, so the user's own positive glob
+ * keeps working while secrets under it are skipped. */
+export function grepSecretExclusions(toolName: unknown, toolInput: unknown): Record<string, unknown> | undefined {
+  if (toolName !== 'Grep' || toolInput === null || typeof toolInput !== 'object' || Array.isArray(toolInput)) {
+    return undefined
+  }
+  const ti = toolInput as Record<string, unknown>
+  const own = typeof ti.glob === 'string' ? ti.glob.trim() : ''
+  return { ...ti, glob: [own, ...GREP_SECRET_EXCLUDES].filter(Boolean).join(' ') }
 }
 
 type CommandExtract =
@@ -2085,6 +2234,17 @@ export function classifyToolCall(input: ClassifyInput): PermissionVerdict {
     const hit = matchPathRules(BUILTIN_DENY_PATHS, pathCands)
     if (hit) {
       return { tier: 'deny', reason: `secret/credential path blocked: ${hit}`, matchedRule: `builtin:deny_path:${hit}` }
+    }
+  }
+  // 2a. Built-in hard-deny — a search filter that targets secrets.
+  if ((toolName === 'Grep' || toolName === 'Glob' || toolName === 'LS') && pathCands && searchRootInProc(pathCands)) {
+    return { tier: 'deny', reason: 'search inside /proc blocked', matchedRule: 'builtin:deny_search_proc' }
+  }
+  if (toolName === 'Grep' || toolName === 'Glob') {
+    const filter = toolName === 'Grep' ? ti.glob : ti.pattern
+    const hit = typeof filter === 'string' ? searchFilterSecretHit(filter) : undefined
+    if (hit) {
+      return { tier: 'deny', reason: `search filter targets secrets: ${hit}`, matchedRule: `builtin:deny_search_filter:${hit}` }
     }
   }
   // 2b. Built-in hard-deny — Bash. Catastrophic commands AND secret-path
