@@ -38,6 +38,7 @@ import { load as parseYaml, JSON_SCHEMA } from 'js-yaml'
 
 import {
   classifyToolCall,
+  grepSecretExclusions,
   PermissionPolicySchema,
   type PermissionPolicy,
   type PermissionVerdict,
@@ -53,9 +54,15 @@ const FALLBACK_POLICY: PermissionPolicy = { default_tier: 'confirm' }
 
 // ── stdout rendering (PreToolUse contract) ──────────────────────────────
 
-export function renderAllow(): string {
+export function renderAllow(updatedInput?: Record<string, unknown>): string {
   return JSON.stringify({
-    hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'allow' },
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'allow',
+      // Grep gets secret exclusions appended (see grepSecretExclusions): a
+      // search over a parent directory must skip credential files, not print them.
+      ...(updatedInput ? { updatedInput } : {}),
+    },
   })
 }
 
@@ -254,7 +261,9 @@ export function decideLocal(args: {
     policy,
     scope,
   })
-  if (verdict.tier === 'allow') return { action: 'emit', stdout: renderAllow() }
+  if (verdict.tier === 'allow') {
+    return { action: 'emit', stdout: renderAllow(grepSecretExclusions(envelope.tool_name, envelope.tool_input)) }
+  }
   if (verdict.tier === 'deny') return { action: 'emit', stdout: renderDeny(verdict.reason) }
   return { action: 'confirm', verdict }
 }
@@ -384,7 +393,7 @@ async function main(): Promise<void> {
   }
   const decision = await runConfirm(built)
   if (decision.kind === 'allow') {
-    emit(renderAllow())
+    emit(renderAllow(grepSecretExclusions(toolName, ti)))
   } else {
     emit(renderDeny(decision.reason))
   }
