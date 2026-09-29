@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import {
@@ -23,7 +23,13 @@ afterEach(() => {
 
 const FAKE_TOKEN = '123456789:AAH-fake_test_token_with_at_least_thirty_chars'
 
-function env(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
+// Neutral fixture identity. The loader has no built-in bot/owner, so every
+// deployment (and every test) must name them explicitly.
+const TEST_BOT_ID = 100000001
+const TEST_OWNER_ID = 200000002
+
+// Token + state dir only: no bot id, no allowed users.
+function bareEnv(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
   return {
     TELEGRAM_BOT_TOKEN: FAKE_TOKEN,
     TELEGRAM_STATE_DIR: stateDir,
@@ -31,11 +37,21 @@ function env(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
   }
 }
 
+function env(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
+  return bareEnv({
+    TELEGRAM_EXPECTED_BOT_ID: String(TEST_BOT_ID),
+    TELEGRAM_ALLOWED_USER_IDS: String(TEST_OWNER_ID),
+    ...overrides,
+  })
+}
+
 describe('loadConfig', () => {
-  test('loads default config when no file and no env overrides except token', () => {
+  test('loads default config when only token + identity env are set', () => {
     const cfg = loadConfig(env())
-    expect(cfg.bot_id).toBe(8507713167)
-    expect(cfg.allowed_user_ids).toEqual([164795011])
+    expect(cfg.bot_id).toBe(TEST_BOT_ID)
+    expect(cfg.allowed_user_ids).toEqual([TEST_OWNER_ID])
+    expect(cfg.allowed_chat_ids).toEqual([])
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([TEST_OWNER_ID])
     expect(cfg.dm_only).toBe(true)
     expect(cfg.status.interval_ms).toBe(700)
     expect(cfg.album.flush_ms).toBe(2000)
@@ -98,7 +114,8 @@ describe('loadConfig', () => {
     writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
       allowed_user_ids: [],
     }))
-    expect(() => loadConfig(env())).toThrow(/allowed_user_ids|too_small|at least 1/i)
+    expect(() => loadConfig(bareEnv({ TELEGRAM_EXPECTED_BOT_ID: String(TEST_BOT_ID) })))
+      .toThrow(/allowed_user_ids|too_small|at least 1/i)
   })
 
   test('coerces string PORT env to number', () => {
@@ -184,7 +201,7 @@ describe('loadConfig', () => {
 
   test('loadConfig accepts TELEGRAM_ACCESS_MODE=static', () => {
     const cfg = loadConfig(env({ TELEGRAM_ACCESS_MODE: 'static' }))
-    expect(cfg.bot_id).toBe(8507713167)
+    expect(cfg.bot_id).toBe(TEST_BOT_ID)
   })
 
   test('loadConfig reads config.json values when no env override', () => {
@@ -193,7 +210,7 @@ describe('loadConfig', () => {
       allowed_user_ids: [42, 43],
       workspace_root: '/tmp/ws',
     }))
-    const cfg = loadConfig(env())
+    const cfg = loadConfig(bareEnv())
     expect(cfg.bot_id).toBe(77777777)
     expect(cfg.allowed_user_ids).toEqual([42, 43])
     expect(cfg.workspace_root).toBe('/tmp/ws')
@@ -651,5 +668,117 @@ describe('resolveAskGuardMode', () => {
     const cfg = loadConfig(env())
     process.env.ASK_GUARD_ENABLED = '1'
     expect(resolveAskGuardMode(cfg)).toBe('advisory')
+  })
+})
+
+describe('loadConfig: owner identity and permission relay recipients', () => {
+  test('missing bot id fails startup with an actionable message', () => {
+    expect(() => loadConfig(bareEnv({ TELEGRAM_ALLOWED_USER_IDS: String(TEST_OWNER_ID) })))
+      .toThrow(/bot_id is not set.*TELEGRAM_EXPECTED_BOT_ID/)
+  })
+
+  test('missing allowed users fails startup instead of falling back to a built-in id', () => {
+    expect(() => loadConfig(bareEnv({ TELEGRAM_EXPECTED_BOT_ID: String(TEST_BOT_ID) })))
+      .toThrow(/allowed_user_ids is empty.*TELEGRAM_ALLOWED_USER_IDS/)
+  })
+
+  test('empty TELEGRAM_ALLOWED_USER_IDS fails startup', () => {
+    expect(() => loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: ' , ' })))
+      .toThrow(/allowed_user_ids is empty/)
+  })
+
+  test('permission_relay inherits allowed_user_ids from TELEGRAM_ALLOWED_USER_IDS', () => {
+    const cfg = loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: '111,222' }))
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([111, 222])
+    expect(cfg.permission_relay.enabled).toBe(true)
+  })
+
+  test('permission_relay inherits allowed_user_ids from config.json', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
+      bot_id: TEST_BOT_ID,
+      allowed_user_ids: [42, 43],
+    }))
+    const cfg = loadConfig(bareEnv())
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([42, 43])
+  })
+
+  test('inheritance keeps other permission_relay fields from config.json', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
+      permission_relay: { enabled: false, bash_only_proof: false },
+    }))
+    const cfg = loadConfig(env())
+    expect(cfg.permission_relay).toEqual({
+      enabled: false,
+      allowed_user_ids: [TEST_OWNER_ID],
+      bash_only_proof: false,
+    })
+  })
+
+  test('explicit config.json permission_relay.allowed_user_ids wins over inheritance', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
+      permission_relay: { allowed_user_ids: [777] },
+    }))
+    const cfg = loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: '111,222' }))
+    expect(cfg.allowed_user_ids).toEqual([111, 222])
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([777])
+  })
+
+  test('TELEGRAM_PERMISSION_ALLOWED_USER_IDS overrides inheritance', () => {
+    const cfg = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_PERMISSION_ALLOWED_USER_IDS: '111',
+    }))
+    expect(cfg.allowed_user_ids).toEqual([111, 222])
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([111])
+  })
+
+  test('TELEGRAM_PERMISSION_ALLOWED_USER_IDS wins over config.json permission_relay', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
+      permission_relay: { allowed_user_ids: [777] },
+    }))
+    const cfg = loadConfig(env({ TELEGRAM_PERMISSION_ALLOWED_USER_IDS: '888' }))
+    expect(cfg.permission_relay.allowed_user_ids).toEqual([888])
+  })
+
+  test('TELEGRAM_PERMISSION_ALLOWED_USER_IDS rejects empty and malformed lists', () => {
+    expect(() => loadConfig(env({ TELEGRAM_PERMISSION_ALLOWED_USER_IDS: '' })))
+      .toThrow(/permission_relay|too_small|at least 1/i)
+    expect(() => loadConfig(env({ TELEGRAM_PERMISSION_ALLOWED_USER_IDS: '12,abc' })))
+      .toThrow(/invalid user id/i)
+  })
+
+  test('explicit empty permission_relay.allowed_user_ids in config.json is rejected', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({
+      permission_relay: { allowed_user_ids: [] },
+    }))
+    expect(() => loadConfig(env())).toThrow(/permission_relay|too_small|at least 1/i)
+  })
+
+  test('malformed permission_relay in config.json is rejected, not replaced by defaults', () => {
+    for (const bad of [null, 'yes', [1]]) {
+      writeFileSync(join(stateDir, 'config.json'), JSON.stringify({ permission_relay: bad }))
+      expect(() => loadConfig(env())).toThrow(/permission_relay/)
+    }
+  })
+
+  test('ask_user_question still inherits the (now owner-derived) permission recipients', () => {
+    const cfg = loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: '333' }))
+    expect(resolveAskUserQuestionAllowedUserIds(cfg)).toEqual([333])
+  })
+
+  test('no source file hardcodes the upstream canary bot or owner id', () => {
+    const srcRoot = join(import.meta.dir, '..', 'src')
+    const offenders: string[] = []
+    const walk = (dir: string): void => {
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name)
+        if (statSync(full).isDirectory()) walk(full)
+        else if (name.endsWith('.ts') && /164795011|8507713167/.test(readFileSync(full, 'utf8'))) {
+          offenders.push(full)
+        }
+      }
+    }
+    walk(srcRoot)
+    expect(offenders).toEqual([])
   })
 })

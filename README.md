@@ -220,6 +220,8 @@ When Claude hits an interactive prompt inside the session, the plugin surfaces i
 
 Every decision is written to an audit JSONL (`statePaths.logs.permissions`). The short-id alphabet excludes the letter `l` (to avoid confusion with `1`/`i`).
 
+**Who receives the "allow?" prompt.** Only this agent's owner. When `permission_relay.allowed_user_ids` is not set explicitly it inherits the resolved `allowed_user_ids` (i.e. `TELEGRAM_ALLOWED_USER_IDS` from `channel.env`, or `allowed_user_ids` from `config.json`). Override it (e.g. narrow it) with the `TELEGRAM_PERMISSION_ALLOWED_USER_IDS` env var (CSV) or `permission_relay.allowed_user_ids` in `config.json`; precedence is env > config.json > inheritance. An explicit list is taken as-is, so put only the owner's id there. The plugin ships no built-in owner or bot id: if the user list (`TELEGRAM_ALLOWED_USER_IDS` or `allowed_user_ids` in `config.json`) is missing or empty, or the bot id (`TELEGRAM_EXPECTED_BOT_ID` or `bot_id`) is missing, it fails at startup with a clear error instead of routing prompts to a stranger.
+
 ### AskUserQuestion relay (PR #28)
 
 The `AskUserQuestion` tool renders in Telegram as an inline keyboard (`src/channel/ask-user-question.ts` + `src/telegram/ask-user-question.ts`):

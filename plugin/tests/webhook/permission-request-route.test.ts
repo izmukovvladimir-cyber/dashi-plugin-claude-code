@@ -28,7 +28,7 @@ beforeEach(() => {
   stateDir = mkdtempSync(join(tmpdir(), 'dashi-channel-pgate-routes-'))
   process.env.TELEGRAM_WEBHOOK_TOKEN = WEBHOOK_TOKEN
   const env = { TELEGRAM_BOT_TOKEN: FAKE_TOKEN, TELEGRAM_STATE_DIR: stateDir }
-  baseConfig = loadConfig(env)
+  baseConfig = loadConfig({ ...env, TELEGRAM_EXPECTED_BOT_ID: '8507713167', TELEGRAM_ALLOWED_USER_IDS: '164795011', TELEGRAM_ALLOWED_CHAT_IDS: '164795011' })
   paths = getStatePaths(baseConfig, env)
   ensureStateDirs(paths)
   handle = null
