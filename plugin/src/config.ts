@@ -1,6 +1,11 @@
 // Config loader with Zod validation and state-dir path resolution.
-// All env vars and config.json keys are validated at boundary; defaults
-// embed canary values (bot 8507713167, prince 164795011).
+// All env vars and config.json keys are validated at boundary. No owner or
+// bot identity is baked into the defaults: bot_id and allowed_user_ids must
+// come from env (TELEGRAM_EXPECTED_BOT_ID / TELEGRAM_ALLOWED_USER_IDS) or
+// config.json, and startup fails loudly when they are missing. The
+// permission relay ("allow this command?") inherits the resolved
+// allowed_user_ids unless set explicitly, so approvals only ever go to the
+// deployment's own owner.
 
 import { existsSync, readFileSync } from 'fs'
 import { homedir } from 'os'
@@ -34,7 +39,7 @@ export const MultichatConfigSchema = z.object({
 export type MultichatConfig = z.infer<typeof MultichatConfigSchema>
 
 export const AppConfigSchema = z.object({
-  bot_id: z.number().int().positive().default(8507713167),
+  bot_id: z.number().int().positive(),
   // `dm_only` predates the multichat router. With `multichat.enabled=false`
   // (default) the legacy gate.ts behaviour is preserved: DM-only with
   // hardcoded drop in the gate. With `multichat.enabled=true` the gate
@@ -42,8 +47,8 @@ export const AppConfigSchema = z.object({
   // ignored. Kept here for backward compatibility with existing
   // config.json files; do NOT remove without a migration pass.
   dm_only: z.boolean().default(true),
-  allowed_user_ids: z.array(z.number().int().positive()).min(1).default([164795011]),
-  allowed_chat_ids: z.array(z.union([z.number(), z.string()])).default([164795011]),
+  allowed_user_ids: z.array(z.number().int().positive()).min(1),
+  allowed_chat_ids: z.array(z.union([z.number(), z.string()])).default([]),
   // Owner DM chat ids for OWNER-ONLY surfaces (the pinned context HUD + the
   // owner command menu). Distinct from `allowed_chat_ids`, which in multichat
   // ALSO lists group/supergroup ids — a HUD with destructive buttons or the
@@ -87,11 +92,14 @@ export const AppConfigSchema = z.object({
     host: z.string().default('127.0.0.1'),
     port: z.number().int().min(0).default(0),
   }).default({}),
+  // allowed_user_ids has no default of its own: loadConfig fills it from the
+  // resolved top-level allowed_user_ids unless config.json or
+  // TELEGRAM_PERMISSION_ALLOWED_USER_IDS sets it explicitly.
   permission_relay: z.object({
     enabled: z.boolean().default(true),
-    allowed_user_ids: z.array(z.number().int().positive()).default([164795011]),
+    allowed_user_ids: z.array(z.number().int().positive()).min(1),
     bash_only_proof: z.boolean().default(true),
-  }).default({}),
+  }),
   commands: z.object({
     help: z.boolean().default(true),
     status: z.boolean().default(true),
@@ -399,6 +407,9 @@ export const RuntimeEnvSchema = z.object({
   // same value as TELEGRAM_ALLOWED_USER_IDS — without this, gate.ts:
   // chat_not_allowed silently drops every inbound DM.
   TELEGRAM_ALLOWED_CHAT_IDS: z.string().optional(),
+  // CSV of user ids allowed to answer permission prompts. Unset means
+  // «inherit the resolved allowed_user_ids» (see loadConfig).
+  TELEGRAM_PERMISSION_ALLOWED_USER_IDS: z.string().optional(),
   TELEGRAM_WORKSPACE_ROOT: z.string().optional(),
   TELEGRAM_STATUS_INTERVAL_MS: z.coerce.number().int().positive().optional(),
   TELEGRAM_ALBUM_FLUSH_MS: z.coerce.number().int().positive().optional(),
@@ -652,6 +663,36 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
     richMessages.perChatOptOut = parseCsvChatIds(parsedEnv.TELEGRAM_RICH_MESSAGES_PER_CHAT_OPT_OUT).map(String)
   }
   if (Object.keys(richMessages).length > 0) merged.richMessages = richMessages
+
+  // Identity guards. There are no built-in defaults for the bot or its
+  // owner, so fail with an actionable message instead of a bare Zod
+  // "Required" (or, worse, silently trusting someone else's id).
+  if (merged.bot_id === undefined) {
+    throw new Error(
+      'invalid config: bot_id is not set — set TELEGRAM_EXPECTED_BOT_ID (numeric id of the bot behind TELEGRAM_BOT_TOKEN) or bot_id in config.json',
+    )
+  }
+  if (!Array.isArray(merged.allowed_user_ids) || merged.allowed_user_ids.length === 0) {
+    throw new Error(
+      'invalid config: allowed_user_ids is empty — set TELEGRAM_ALLOWED_USER_IDS (the owner\'s Telegram user id) or allowed_user_ids in config.json',
+    )
+  }
+
+  // Permission relay recipients: env > config.json > inherited top-level
+  // allowed_user_ids. Inheriting keeps approvals with the deployment owner.
+  // A present-but-malformed permission_relay (null, string, array) is left
+  // as-is so Zod rejects it rather than silently re-enabling defaults.
+  if (merged.permission_relay === undefined) merged.permission_relay = {}
+  const permissionRelay = merged.permission_relay
+  if (permissionRelay !== null && typeof permissionRelay === 'object' && !Array.isArray(permissionRelay)) {
+    const relay = permissionRelay as Record<string, unknown>
+    if (parsedEnv.TELEGRAM_PERMISSION_ALLOWED_USER_IDS !== undefined) {
+      relay.allowed_user_ids = parseCsvUserIds(parsedEnv.TELEGRAM_PERMISSION_ALLOWED_USER_IDS)
+    }
+    if (relay.allowed_user_ids === undefined) {
+      relay.allowed_user_ids = merged.allowed_user_ids
+    }
+  }
 
   try {
     return AppConfigSchema.parse(merged)

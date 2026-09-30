@@ -39,7 +39,7 @@ let paths: StatePaths
 
 beforeEach(() => {
   stateDir = mkdtempSync(join(tmpdir(), 'dashi-channel-pid-'))
-  const env = { TELEGRAM_BOT_TOKEN: FAKE_TOKEN, TELEGRAM_STATE_DIR: stateDir }
+  const env = { TELEGRAM_BOT_TOKEN: FAKE_TOKEN, TELEGRAM_STATE_DIR: stateDir, TELEGRAM_EXPECTED_BOT_ID: '8507713167', TELEGRAM_ALLOWED_USER_IDS: '164795011', TELEGRAM_ALLOWED_CHAT_IDS: '164795011' }
   const cfg = loadConfig(env)
   paths = getStatePaths(cfg, {
     TELEGRAM_BOT_TOKEN: FAKE_TOKEN,

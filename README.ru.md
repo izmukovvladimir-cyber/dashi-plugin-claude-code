@@ -210,6 +210,8 @@ bash plugin/scripts/install-hooks.sh \
 
 Каждое решение пишется в audit-JSONL (`statePaths.logs.permissions`). Short-id-алфавит исключает букву `l` (чтобы не путать с `1`/`i`).
 
+**Кто получает вопрос «разрешить?».** Только владелец этого агента. `permission_relay.allowed_user_ids` без явного значения наследует итоговый `allowed_user_ids` (то есть `TELEGRAM_ALLOWED_USER_IDS` из `channel.env` или `allowed_user_ids` из `config.json`). Переопределить список (например, сузить) можно переменной `TELEGRAM_PERMISSION_ALLOWED_USER_IDS` (CSV) или ключом `permission_relay.allowed_user_ids` в `config.json`; порядок: env > config.json > наследование. Явный список берётся как есть, вписывайте туда только ID владельца. Встроенных ID владельца и бота в плагине нет: если не задан список пользователей (`TELEGRAM_ALLOWED_USER_IDS` или `allowed_user_ids` в `config.json`) или он пуст, либо не задан ID бота (`TELEGRAM_EXPECTED_BOT_ID` или `bot_id`), плагин падает при старте с понятной ошибкой, а не отправляет вопросы чужому человеку.
+
 ### AskUserQuestion relay (PR #28)
 
 Tool `AskUserQuestion` рендерится в Telegram как инлайн-клавиатура (`src/channel/ask-user-question.ts` + `src/telegram/ask-user-question.ts`):

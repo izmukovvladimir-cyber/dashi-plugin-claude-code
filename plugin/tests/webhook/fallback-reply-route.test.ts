@@ -54,6 +54,8 @@ beforeEach(() => {
   const env = {
     TELEGRAM_BOT_TOKEN: FAKE_TOKEN,
     TELEGRAM_STATE_DIR: stateDir,
+    TELEGRAM_EXPECTED_BOT_ID: '8507713167',
+    TELEGRAM_ALLOWED_USER_IDS: '164795011',
     TELEGRAM_ALLOWED_CHAT_IDS: `${WARCHIEF_ID},${GROUP_ID}`,
   }
   baseConfig = loadConfig(env)
