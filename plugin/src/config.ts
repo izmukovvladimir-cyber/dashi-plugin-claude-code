@@ -56,6 +56,13 @@ export const AppConfigSchema = z.object({
   // omitted, `resolveOwnerChatIds` falls back to `allowed_user_ids` (in a DM the
   // chat id equals the positive user id). Positive ids only.
   owner_chat_ids: z.array(z.number().int().positive()).optional(),
+  // User ids allowed to run the OOB control commands (/stop, /new, /keys, /cc,
+  // /compact, /lease, /mirror, /status, /help) and to tap their panels
+  // (kkey:/ccmd:/newq:/hud:). Lets an owner allow a second person to MESSAGE
+  // the agent without handing them session control. Optional: when omitted or
+  // empty, `resolveCommandOwnerIds` falls back to `allowed_user_ids` — exactly
+  // the pre-existing behaviour. Env override: TELEGRAM_COMMAND_OWNER_IDS (CSV).
+  command_owner_ids: z.array(z.number().int().positive()).optional(),
   workspace_root: z.string().optional(),
   // Model context-window size in tokens, used by /status (context usage) and
   // the context HUD. Optional — resolved via `resolveContextWindowTokens`,
@@ -410,6 +417,9 @@ export const RuntimeEnvSchema = z.object({
   // CSV of user ids allowed to answer permission prompts. Unset means
   // «inherit the resolved allowed_user_ids» (see loadConfig).
   TELEGRAM_PERMISSION_ALLOWED_USER_IDS: z.string().optional(),
+  // CSV of user ids allowed to run OOB control commands. Unset or empty
+  // means «every allowed_user_ids sender» (see resolveCommandOwnerIds).
+  TELEGRAM_COMMAND_OWNER_IDS: z.string().optional(),
   TELEGRAM_WORKSPACE_ROOT: z.string().optional(),
   TELEGRAM_STATUS_INTERVAL_MS: z.coerce.number().int().positive().optional(),
   TELEGRAM_ALBUM_FLUSH_MS: z.coerce.number().int().positive().optional(),
@@ -586,6 +596,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): AppConfig {
   }
   if (parsedEnv.TELEGRAM_ALLOWED_CHAT_IDS !== undefined) {
     merged.allowed_chat_ids = parseCsvChatIds(parsedEnv.TELEGRAM_ALLOWED_CHAT_IDS)
+  }
+  if (parsedEnv.TELEGRAM_COMMAND_OWNER_IDS !== undefined) {
+    merged.command_owner_ids = parseCsvUserIds(parsedEnv.TELEGRAM_COMMAND_OWNER_IDS)
   }
   if (parsedEnv.TELEGRAM_WORKSPACE_ROOT !== undefined) {
     merged.workspace_root = parsedEnv.TELEGRAM_WORKSPACE_ROOT
@@ -1094,6 +1107,24 @@ export function resolveOwnerChatIds(config: AppConfig): readonly number[] {
   if (explicit !== undefined && explicit.length > 0) {
     const positive = explicit.filter((n) => Number.isInteger(n) && n > 0)
     if (positive.length > 0) return positive
+  }
+  return config.allowed_user_ids
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// resolveCommandOwnerIds — who may run the OOB control commands and tap their
+// panels. Explicit non-empty `command_owner_ids` wins; otherwise every
+// `allowed_user_ids` sender (the behaviour before this setting existed). An
+// explicit list is intersected with `allowed_user_ids`: an owner id that is
+// not also allowed can never run anything, and a list with no allowed id at
+// all yields NOBODY (fail-closed), never a fallback to everyone.
+// ─────────────────────────────────────────────────────────────────────
+
+export function resolveCommandOwnerIds(config: AppConfig): readonly number[] {
+  const explicit = config.command_owner_ids
+  if (explicit !== undefined && explicit.length > 0) {
+    const allowed = new Set(config.allowed_user_ids)
+    return explicit.filter((id) => allowed.has(id))
   }
   return config.allowed_user_ids
 }

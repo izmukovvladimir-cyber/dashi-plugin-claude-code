@@ -14,6 +14,7 @@ import { join } from 'path'
 import type { Context } from 'grammy'
 
 import {
+  COMMAND_OWNER_ONLY_REPLY,
   handleInboundText,
   handleInboundDocument,
   handleInboundSticker,
@@ -911,6 +912,138 @@ describe('handleInboundText — F3 permission-priority gate', () => {
     expect(otherCalls.length).toBe(1)
     expect(otherCalls[0]!.replyToMessageId).toBe(77)
     // Consumed → channel forward must NOT fire.
+    expect(serverSpy.calls.length).toBe(0)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────
+// Command owners — an allowed non-owner may talk to the agent but never run
+// the OOB control commands. Drives the real handleInboundText.
+// ─────────────────────────────────────────────────────────────────────
+
+describe('handleInboundText — command owners (command_owner_ids)', () => {
+  const OWNER = 164795011
+  const GUEST = 555000111
+
+  function setup(commandOwners: number[] | undefined): {
+    deps: HandlerDeps
+    statePaths: StatePaths
+    serverSpy: ServerSpy
+    sends: Array<{ chatId: string; text: string }>
+  } {
+    const config = makeConfig({
+      allowed_user_ids: [OWNER, GUEST],
+      allowed_chat_ids: [OWNER, GUEST],
+      permission_relay: { enabled: true, allowed_user_ids: [OWNER], bash_only_proof: true },
+      ...(commandOwners !== undefined ? { command_owner_ids: commandOwners } : {}),
+    })
+    const serverSpy = makeServerSpy()
+    const sends: Array<{ chatId: string; text: string }> = []
+    const tg = makeTelegramApi()
+    const api: TelegramApi = {
+      ...tg.api,
+      sendMessage: async (chatId, text) => {
+        sends.push({ chatId, text })
+        return { message_id: 100 }
+      },
+    }
+    const { deps, statePaths } = makeDeps({ config, server: serverSpy.server, telegramApi: api })
+    return { deps, statePaths, serverSpy, sends }
+  }
+
+  for (const cmd of ['/stop', '/new', '/keys', '/cc clear', '/compact', '/mirror on', '/status', '/help', '/lease деплой', '/reset force']) {
+    test(`non-owner ${cmd}: one refusal line, nothing reaches the session`, async () => {
+      const { deps, statePaths, serverSpy, sends } = setup([OWNER])
+      await handleInboundText(makeCtx({ text: cmd, chatId: GUEST, chatType: 'private', fromId: GUEST }), deps)
+      if (cmd === '/reset force') {
+        // /reset is not an OOB command in this plugin: it stays an ordinary
+        // message, exactly as before for every sender.
+        expect(sends.length).toBe(0)
+        expect(serverSpy.calls.length).toBe(1)
+      } else {
+        expect(sends).toEqual([{ chatId: String(GUEST), text: COMMAND_OWNER_ONLY_REPLY }])
+        expect(serverSpy.calls.length).toBe(0)
+      }
+      expect(loadAutonomyState({ root: statePaths.root }, String(GUEST)).leases.length).toBe(0)
+      rmSync(statePaths.root, { recursive: true, force: true })
+    })
+  }
+
+  test('non-owner ordinary message still reaches the session', async () => {
+    const { deps, statePaths, serverSpy, sends } = setup([OWNER])
+    await handleInboundText(makeCtx({ text: 'привет, Николай', chatId: GUEST, chatType: 'private', fromId: GUEST }), deps)
+    expect(sends.length).toBe(0)
+    expect(serverSpy.calls.length).toBe(1)
+    const params = serverSpy.calls[0]!.params as { content: string; meta: Record<string, string> }
+    expect(params.content).toContain('привет, Николай')
+    expect(params.meta.user_id).toBe(String(GUEST))
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('owner still runs commands (/help replies with the help card)', async () => {
+    const { deps, statePaths, serverSpy, sends } = setup([OWNER])
+    await handleInboundText(makeCtx({ text: '/help', chatId: OWNER, chatType: 'private', fromId: OWNER }), deps)
+    expect(sends.length).toBe(1)
+    expect(sends[0]!.text).not.toBe(COMMAND_OWNER_ONLY_REPLY)
+    expect(sends[0]!.text).toContain('/stop')
+    expect(serverSpy.calls.length).toBe(0)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('owner /lease still mints a lease', async () => {
+    const { deps, statePaths } = setup([OWNER])
+    await handleInboundText(makeCtx({ text: '/lease деплой', chatId: OWNER, chatType: 'private', fromId: OWNER }), deps)
+    expect(activeLeases(loadAutonomyState({ root: statePaths.root }, String(OWNER)), Date.now()).length).toBe(1)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('owner list unset: every allowed sender runs commands as before', async () => {
+    const { deps, statePaths, serverSpy, sends } = setup(undefined)
+    await handleInboundText(makeCtx({ text: '/help', chatId: GUEST, chatType: 'private', fromId: GUEST }), deps)
+    expect(sends.length).toBe(1)
+    expect(sends[0]!.text).not.toBe(COMMAND_OWNER_ONLY_REPLY)
+    expect(serverSpy.calls.length).toBe(0)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('non-allowed sender is not answered (refusal only for allowed senders)', async () => {
+    const { deps, statePaths, serverSpy, sends } = setup([OWNER])
+    await handleInboundText(makeCtx({ text: '/stop', chatId: 777, chatType: 'private', fromId: 777 }), deps)
+    expect(sends.length).toBe(0)
+    expect(serverSpy.calls.length).toBe(0)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('non-owner command answering an «Other» prompt is refused, never consumed as the answer', async () => {
+    const { deps, statePaths, serverSpy, sends } = setup([OWNER])
+    const otherCalls: string[] = []
+    const withAsk: HandlerDeps = {
+      ...deps,
+      askUserQuestionUi: {
+        startQuestion: async () => {},
+        handleAskCallback: async () => {},
+        tryHandleOtherText: async (input: { text: string }) => {
+          otherCalls.push(input.text)
+          return true
+        },
+        awaitingOtherCount: () => 1,
+      } as unknown as NonNullable<HandlerDeps['askUserQuestionUi']>,
+    }
+    await handleInboundText(makeCtx({ text: '/stop', chatId: GUEST, chatType: 'private', fromId: GUEST }), withAsk)
+    expect(otherCalls).toEqual([])
+    expect(sends).toEqual([{ chatId: String(GUEST), text: COMMAND_OWNER_ONLY_REPLY }])
+    expect(serverSpy.calls.length).toBe(0)
+    rmSync(statePaths.root, { recursive: true, force: true })
+  })
+
+  test('refusal send failure is swallowed and the command is still not forwarded', async () => {
+    const { deps, statePaths, serverSpy } = setup([OWNER])
+    const failing: HandlerDeps = {
+      ...deps,
+      telegramApi: { ...deps.telegramApi, sendMessage: async () => { throw new Error('boom') } },
+    }
+    await handleInboundText(makeCtx({ text: '/stop', chatId: GUEST, chatType: 'private', fromId: GUEST }), failing)
     expect(serverSpy.calls.length).toBe(0)
     rmSync(statePaths.root, { recursive: true, force: true })
   })

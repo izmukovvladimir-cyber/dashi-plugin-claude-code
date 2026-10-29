@@ -8,6 +8,7 @@ import {
   redactToken,
   resolveAskGuardMode,
   resolveAskUserQuestionAllowedUserIds,
+  resolveCommandOwnerIds,
   RuntimeEnvSchema,
 } from '../src/config.js'
 
@@ -780,5 +781,59 @@ describe('loadConfig: owner identity and permission relay recipients', () => {
     }
     walk(srcRoot)
     expect(offenders).toEqual([])
+  })
+})
+
+describe('command owners (command_owner_ids / TELEGRAM_COMMAND_OWNER_IDS)', () => {
+  test('unset: every allowed user is a command owner (unchanged behaviour)', () => {
+    const cfg = loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: '111,222' }))
+    expect(cfg.command_owner_ids).toBeUndefined()
+    expect(resolveCommandOwnerIds(cfg)).toEqual([111, 222])
+  })
+
+  test('env narrows command owners to the listed ids', () => {
+    const cfg = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_COMMAND_OWNER_IDS: '111',
+    }))
+    expect(cfg.command_owner_ids).toEqual([111])
+    expect(resolveCommandOwnerIds(cfg)).toEqual([111])
+  })
+
+  test('config.json sets command owners; env wins over it', () => {
+    writeFileSync(join(stateDir, 'config.json'), JSON.stringify({ command_owner_ids: [222] }))
+    const fromFile = loadConfig(env({ TELEGRAM_ALLOWED_USER_IDS: '111,222' }))
+    expect(resolveCommandOwnerIds(fromFile)).toEqual([222])
+    const fromEnv = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_COMMAND_OWNER_IDS: '111',
+    }))
+    expect(resolveCommandOwnerIds(fromEnv)).toEqual([111])
+  })
+
+  test('empty env value keeps the fallback to allowed_user_ids', () => {
+    const cfg = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_COMMAND_OWNER_IDS: '',
+    }))
+    expect(resolveCommandOwnerIds(cfg)).toEqual([111, 222])
+  })
+
+  test('an owner id that is not allowed is dropped; none allowed = nobody', () => {
+    const partial = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_COMMAND_OWNER_IDS: '111,999',
+    }))
+    expect(resolveCommandOwnerIds(partial)).toEqual([111])
+    const none = loadConfig(env({
+      TELEGRAM_ALLOWED_USER_IDS: '111,222',
+      TELEGRAM_COMMAND_OWNER_IDS: '999',
+    }))
+    expect(resolveCommandOwnerIds(none)).toEqual([])
+  })
+
+  test('malformed env list is rejected', () => {
+    expect(() => loadConfig(env({ TELEGRAM_COMMAND_OWNER_IDS: '12,abc' })))
+      .toThrow(/invalid user id/i)
   })
 })

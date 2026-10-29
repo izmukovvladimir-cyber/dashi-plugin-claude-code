@@ -212,6 +212,8 @@ bash plugin/scripts/install-hooks.sh \
 
 **Кто получает вопрос «разрешить?».** Только владелец этого агента. `permission_relay.allowed_user_ids` без явного значения наследует итоговый `allowed_user_ids` (то есть `TELEGRAM_ALLOWED_USER_IDS` из `channel.env` или `allowed_user_ids` из `config.json`). Переопределить список (например, сузить) можно переменной `TELEGRAM_PERMISSION_ALLOWED_USER_IDS` (CSV) или ключом `permission_relay.allowed_user_ids` в `config.json`; порядок: env > config.json > наследование. Явный список берётся как есть, вписывайте туда только ID владельца. Встроенных ID владельца и бота в плагине нет: если не задан список пользователей (`TELEGRAM_ALLOWED_USER_IDS` или `allowed_user_ids` в `config.json`) или он пуст, либо не задан ID бота (`TELEGRAM_EXPECTED_BOT_ID` или `bot_id`), плагин падает при старте с понятной ошибкой, а не отправляет вопросы чужому человеку.
 
+**Кто может давать служебные команды.** По умолчанию любой из `allowed_user_ids` может слать `/help`, `/status`, `/stop`, `/compact`, `/new`, `/mirror`, `/keys`, `/cc`, `/lease` и жать их кнопки. Чтобы второй человек мог писать агенту, но не управлял сессией, задайте `TELEGRAM_COMMAND_OWNER_IDS` (CSV) или `command_owner_ids` в `config.json` (env > config.json) с ID владельца. Остальным разрешённым на команду приходит одна строка «Эта команда доступна только владельцу бота.», команда не выполняется и в сессию не уходит; обычные сообщения идут как раньше. ID вне `allowed_user_ids` не учитываются; пустое или незаданное значение сохраняет прежнее поведение.
+
 ### AskUserQuestion relay (PR #28)
 
 Tool `AskUserQuestion` рендерится в Telegram как инлайн-клавиатура (`src/channel/ask-user-question.ts` + `src/telegram/ask-user-question.ts`):

@@ -31,6 +31,7 @@ import {
   resolveContextWindowOverride,
   resolveGuestModeAllowedUserIds,
   resolveGuestModeEnabled,
+  resolveCommandOwnerIds,
   resolveHudEnabled,
   resolveOwnerChatIds,
   type AppConfig,
@@ -542,6 +543,10 @@ const sessionInfoStore = new SessionInfoStore()
 // never be pinned in a public group, and its callbacks drive the single global
 // DM pane.
 const hudOwnerChatIds: ReadonlyArray<number | string> = resolveOwnerChatIds(config)
+// Session-driving panel taps (kkey:/ccmd:/newq:/hud:) authorize against the
+// SAME set as the OOB control commands: command_owner_ids, falling back to
+// allowed_user_ids when unset (unchanged behaviour).
+const commandOwnerIds: readonly number[] = resolveCommandOwnerIds(config)
 const hudApi: HudTelegramApi = {
   // skipOutboundStamp (fix-loop-1 #6): a HUD pin (re)creation is an INTERNAL
   // surface, not a report to the owner — it must never reset the heartbeat
@@ -896,9 +901,9 @@ bot.on('callback_query:data', async ctx => {
   }
   // /keys keypad (kkey:*) — one-tap keystroke injection into the agent pane.
   // Dispatched on its own prefix so it never collides with pgate:/ask:/perm:.
-  // Auth is fail-closed against config.allowed_user_ids — the SAME allowlist
-  // that guards the OOB control commands (handlers.ts OOB gate).
-  // We use allowed_user_ids (not the permission_gate set) because each tap
+  // Auth is fail-closed against commandOwnerIds — the SAME set that guards
+  // the OOB control commands (handlers.ts OOB gate; allowed_user_ids unless
+  // command_owner_ids is set). Not the permission_gate set, because each tap
   // injects one whitelisted keystroke into the pane, so the authorization
   // surface must match that of any other session-driving control command.
   // The handler never mutates the keyboard message — the warchief taps it
@@ -917,7 +922,7 @@ bot.on('callback_query:data', async ctx => {
           },
         },
         {
-          allowedUserIds: config.allowed_user_ids,
+          allowedUserIds: commandOwnerIds,
           log,
           ...(tmuxKeysTarget !== undefined ? { tmuxKeysTarget } : {}),
         },
@@ -941,7 +946,7 @@ bot.on('callback_query:data', async ctx => {
   }
   // /cc command panel (ccmd:*) — one-tap run of a whitelisted Claude Code
   // slash command in the agent pane. Same fail-closed allowlist auth as kkey:
-  // (config.allowed_user_ids === the /cc OOB command's gate). A tap types
+  // (commandOwnerIds === the /cc OOB command's gate). A tap types
   // `/<name>` into the pane and submits — identical to typing `/cc <name>`.
   // Never mutates the keyboard message — the warchief taps it repeatedly.
   if (data.startsWith('ccmd:')) {
@@ -956,7 +961,7 @@ bot.on('callback_query:data', async ctx => {
           },
         },
         {
-          allowedUserIds: config.allowed_user_ids,
+          allowedUserIds: commandOwnerIds,
           log,
           ...(tmuxKeysTarget !== undefined ? { tmuxKeysTarget } : {}),
           // FIX-7: destructive `clear` posts the /new confirm card (fresh
@@ -984,8 +989,8 @@ bot.on('callback_query:data', async ctx => {
     return
   }
   // /new confirm card (newq:*) — one-tap-with-confirm clear of the session
-  // context. Same fail-closed allowlist auth as kkey:/ccmd: (config
-  // .allowed_user_ids). confirm → reliable /clear + edit the card to the real
+  // context. Same fail-closed auth as kkey:/ccmd: (commandOwnerIds).
+  // confirm → reliable /clear + edit the card to the real
   // result; cancel → edit «Отменено». Never drives the pane for a non-allowed
   // user id. Dispatched on its own prefix so it never collides with the others.
   if (data.startsWith('newq:')) {
@@ -1010,7 +1015,7 @@ bot.on('callback_query:data', async ctx => {
           },
         },
         {
-          allowedUserIds: config.allowed_user_ids,
+          allowedUserIds: commandOwnerIds,
           log,
           ...(tmuxKeysTarget !== undefined ? { tmuxKeysTarget } : {}),
           // FIX-8: refuse a confirm from any chat that is not the owner DM.
@@ -1033,8 +1038,8 @@ bot.on('callback_query:data', async ctx => {
   }
   // Context HUD panel (hud:*) — callbacks of the pinned HUD message («Сжать»
   // plus legacy hud:new from stale pre-removal markup).
-  // Same fail-closed allowlist auth as kkey:/ccmd:/newq: (config
-  // .allowed_user_ids). `hud:compact` drives the reliable /compact injection;
+  // Same fail-closed auth as kkey:/ccmd:/newq: (commandOwnerIds).
+  // `hud:compact` drives the reliable /compact injection;
   // `hud:new` posts the SAME /new confirm card whose newq:* buttons the branch
   // above handles (so a destructive clear always confirms — never a blind
   // clear). Dispatched on its own prefix so it never collides with the others.
@@ -1051,7 +1056,7 @@ bot.on('callback_query:data', async ctx => {
           },
         },
         {
-          allowedUserIds: config.allowed_user_ids,
+          allowedUserIds: commandOwnerIds,
           log,
           ...(tmuxKeysTarget !== undefined ? { tmuxKeysTarget } : {}),
           // FIX-8: refuse a HUD tap from any chat that is not the owner DM.

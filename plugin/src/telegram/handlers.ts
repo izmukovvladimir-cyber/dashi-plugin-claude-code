@@ -19,6 +19,7 @@ import type { Server } from '@modelcontextprotocol/sdk/server/index.js'
 
 import type { AppConfig, StatePaths } from '../config.js'
 import {
+  resolveCommandOwnerIds,
   resolveContextWindowOverride,
   resolveContextWindowTokens,
   resolveGuestModeAllowedUserIds,
@@ -1166,6 +1167,41 @@ export async function sendAlbumNotification(
 // Text handler — no media descriptors.
 // ─────────────────────────────────────────────────────────────────────
 
+// Reply to an allowed sender who is not a command owner.
+export const COMMAND_OWNER_ONLY_REPLY = 'Эта команда доступна только владельцу бота.'
+
+// Command owners (command_owner_ids / TELEGRAM_COMMAND_OWNER_IDS, default =
+// every allowed sender). In the exact situation where the OOB block would run
+// a command (DM, allowed sender, allowed chat), an allowed NON-owner gets one
+// short refusal and the command is swallowed: it neither runs nor reaches the
+// session as a normal message, so a second person allowed to talk to the
+// agent can not stop, clear or drive it. Returns true when it swallowed.
+async function refuseNonOwnerCommand(ctx: Context, deps: HandlerDeps, text: string): Promise<boolean> {
+  const parsed = parseOobCommand(text, deps.bot.username)
+  if (!parsed) return false
+  const senderNum = ctx.from?.id
+  const chatNum = ctx.chat?.id
+  if (ctx.chat?.type !== 'private' || senderNum === undefined || chatNum === undefined) return false
+  if (!deps.config.allowed_user_ids.includes(senderNum)) return false
+  const allowedChatSet = new Set(deps.config.allowed_chat_ids.map((v) => String(v)))
+  if (!allowedChatSet.has(String(chatNum))) return false
+  if (resolveCommandOwnerIds(deps.config).includes(senderNum)) return false
+  const chatId = String(chatNum)
+  deps.log.info('oob command refused: sender is not a command owner', {
+    chat_id: chatId,
+    command: parsed.name,
+  })
+  try {
+    await deps.telegramApi.sendMessage(chatId, COMMAND_OWNER_ONLY_REPLY, {})
+  } catch (err) {
+    deps.log.warn('oob owner-only refusal send failed', {
+      command: parsed.name,
+      error: err instanceof Error ? err.message : String(err),
+    })
+  }
+  return true
+}
+
 export async function handleInboundText(ctx: Context, deps: HandlerDeps): Promise<void> {
   const text = ctx.message?.text ?? ''
 
@@ -1224,6 +1260,11 @@ export async function handleInboundText(ctx: Context, deps: HandlerDeps): Promis
       // ever starts a sentence that way. Channel sees the message.
     }
   }
+
+  // Command owners: an allowed non-owner's control command is refused here,
+  // BEFORE any consumer (the «Other» reply below included) can hand it to the
+  // session as text.
+  if (await refuseNonOwnerCommand(ctx, deps, text)) return
 
   // PRX-1 TASK-2 (2026-05-27): AskUserQuestion «Other» text-reply
   // consumption. Runs AFTER the permission-reply gate so a live `yes <id>`

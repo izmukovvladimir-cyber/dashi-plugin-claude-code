@@ -44,7 +44,7 @@
 
 import type { Logger } from '../log.js'
 import type { AppConfig } from '../config.js'
-import { resolveAskUserQuestionAllowedUserIds } from '../config.js'
+import { resolveAskUserQuestionAllowedUserIds, resolveCommandOwnerIds } from '../config.js'
 import type {
   AskAnswerOutcome,
   AskSettleEvent,
@@ -1087,8 +1087,23 @@ export function createAskUserQuestionUi(
     // pending record's chatId was lost — fix-loop-2 #3: never a silent
     // failure on a grant-capable card.
     feedbackChatId: string
+    // Telegram user id of whoever tapped. A lease is session control, so only
+    // a command owner may mint one (same set as the `/lease` command).
+    grantorUserId: number
   }): Promise<void> {
     if (!isAffirmativeLabel(input.chosenLabel)) return
+    if (!resolveCommandOwnerIds(deps.config).includes(input.grantorUserId)) {
+      log.warn('autonomy lease grant refused — tapper is not a command owner', {
+        request_id: input.requestId,
+        user_id: input.grantorUserId,
+      })
+      try {
+        await telegramApi.sendMessage(input.feedbackChatId, 'Мандат НЕ выдан: только владелец бота', { parse_mode: 'HTML' })
+      } catch {
+        // feedback is best-effort
+      }
+      return
+    }
     if (!deps.autonomyPaths || input.chatId === undefined) {
       // A grant-capable card reached the tap while the registry is not
       // reachable in THIS process (runtime-only failure — creation-time
@@ -1482,6 +1497,7 @@ export function createAskUserQuestionUi(
               chatId: snap.chatId ?? ctx.chatId,
               grantorMessageId: snap.messageId,
               feedbackChatId: ctx.chatId,
+              grantorUserId: ctx.from.id,
             })
             // The intent is consumed — drop the durable record (idempotency
             // of the GRANT lives in the registry ledger, not here).

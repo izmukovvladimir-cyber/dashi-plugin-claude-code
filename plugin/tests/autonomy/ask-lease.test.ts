@@ -80,12 +80,13 @@ function fakeTelegram(state: Sends): TelegramApi {
   }
 }
 
-function mkConfig(): AppConfig {
+function mkConfig(extra: Partial<AppConfig> = {}): AppConfig {
   return {
     bot_id: 8507713167,
     dm_only: true,
     allowed_user_ids: [OWNER],
     allowed_chat_ids: [OWNER],
+    ...extra,
     permission_relay: { enabled: true, allowed_user_ids: [OWNER], bash_only_proof: true },
     ask_user_question: { enabled: true, timeout_ms: 300_000, max_preview_chars: 1000 },
   } as unknown as AppConfig
@@ -105,7 +106,7 @@ interface Harness {
   send: Sends
 }
 
-function mkHarness(opts: { withAutonomy?: boolean } = {}): Harness {
+function mkHarness(opts: { withAutonomy?: boolean; config?: AppConfig } = {}): Harness {
   const send: Sends = { sendCalls: [], editCalls: [], nextMessageId: 5000 }
   const api = fakeTelegram(send)
   let uiRef: AskUserQuestionUi | undefined
@@ -116,7 +117,7 @@ function mkHarness(opts: { withAutonomy?: boolean } = {}): Harness {
     },
   })
   const ui = createAskUserQuestionUi({
-    config: mkConfig(),
+    config: opts.config ?? mkConfig(),
     log: silentLog(),
     telegramApi: api,
     relay,
@@ -532,5 +533,35 @@ describe('closed-card body budget (fix-loop-2 #2)', () => {
     const body = renderClosedQuestionBody('raw?', 0, 1, '✅ Ответ: <b>Да</b>', { leaseIntent: intent })
     expect(body.length).toBeLessThanOrEqual(MAX_BODY_CHARS)
     expect(body).toContain('&quot;'.repeat(400))
+  })
+})
+
+describe('ask-card lease grant — command owners only', () => {
+  test('affirmative tap by an approver who is NOT a command owner mints nothing and says so', async () => {
+    const GUEST = 555000111
+    const config = mkConfig({ allowed_user_ids: [OWNER, GUEST], command_owner_ids: [OWNER] })
+    ;(config as unknown as { ask_user_question: Record<string, unknown> }).ask_user_question.allowed_user_ids = [OWNER, GUEST]
+    const h = mkHarness({ config })
+    const { requestId, messageId } = await submitAndRender(
+      h,
+      '[LEASE: деплой стейджинга; ttl=48h] Разрешаешь деплой?',
+      [{ label: 'Да' }, { label: 'Нет' }],
+    )
+    const t = tap(requestId, 0, messageId)
+    await h.ui.handleAskCallback({ ...t, from: { id: GUEST } })
+    expect(activeLeases(loadAutonomyState({ root }, CHAT), Date.now()).length).toBe(0)
+    expect(h.send.sendCalls.some((c) => c.text.includes('Мандат НЕ выдан: только владелец'))).toBe(true)
+  })
+
+  test('the command owner still mints the lease with an owner list set', async () => {
+    const GUEST = 555000111
+    const h = mkHarness({ config: mkConfig({ allowed_user_ids: [OWNER, GUEST], command_owner_ids: [OWNER] }) })
+    const { requestId, messageId } = await submitAndRender(
+      h,
+      '[LEASE: деплой стейджинга; ttl=48h] Разрешаешь деплой?',
+      [{ label: 'Да' }, { label: 'Нет' }],
+    )
+    await h.ui.handleAskCallback(tap(requestId, 0, messageId))
+    expect(activeLeases(loadAutonomyState({ root }, CHAT), Date.now()).length).toBe(1)
   })
 })
